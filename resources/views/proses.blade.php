@@ -177,21 +177,32 @@
             </div>
         </div>
 
-        {{-- AKSI --}}
-        <div class="pt-2 space-y-4">
-            @if($kunjungan->status_layanan == 'Selesai')
-                <a href="{{ route('survey.form', $kunjungan->nomor_kunjungan) }}" class="w-full flex items-center justify-center py-5 bg-indigo-600 text-white font-extrabold rounded-[2rem] shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95">
-                    Beri Ulasan Layanan ⭐
-                </a>
-            @endif
+       {{-- AKSI --}}
+<div class="pt-2 space-y-4">
+    @if($kunjungan->status_layanan == 'Selesai')
 
-            <a href="{{ route('landing') }}" class="w-full flex items-center justify-center py-5 bg-slate-900 text-white font-extrabold rounded-[2rem] shadow-xl hover:bg-black transition-all active:scale-95 gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                Kembali ke Beranda
+        {{-- KONDISI: Jika BELUM ADA data di tabel surveys untuk kunjungan ini --}}
+        @if(!$kunjungan->survey)
+            <a href="{{ route('survey.form', $kunjungan->nomor_kunjungan) }}"
+               class="w-full flex items-center justify-center py-5 bg-indigo-600 text-white font-extrabold rounded-[2rem] shadow-xl hover:bg-indigo-700 transition-all active:scale-95">
+                Beri Ulasan Layanan ⭐
             </a>
-        </div>
+
+        {{-- KONDISI: Jika SUDAH ADA data di tabel surveys --}}
+        @else
+            <div class="w-full flex items-center justify-center py-4 bg-emerald-100 text-emerald-700 font-bold rounded-[2rem] border border-emerald-200 text-sm">
+                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                Ulasan telah diisi. Terima kasih!
+            </div>
+        @endif
+
+    @endif
+
+    <a href="{{ url('/') }}" class="w-full flex items-center justify-center py-5 bg-slate-900 text-white font-extrabold rounded-[2rem] shadow-xl hover:bg-black transition-all gap-3">
+        <i class="fa-solid fa-house"></i>
+        <span>Kembali ke Beranda</span>
+    </a>
+</div>
 
         <p class="text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.6em]">Digital Gate System</p>
     </div>

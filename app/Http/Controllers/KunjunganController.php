@@ -20,7 +20,8 @@ class KunjunganController extends Controller
 {
     public function create()
     {
-        $prodi = MasterProdiInstansi::where('jenis', 'Prodi')->get();
+       // Tambahkan ->query()
+        $prodi = MasterProdiInstansi::query()->where('jenis', 'Prodi')->get();
 
         $keperluan = DB::table('master_keperluan')
                         ->select('keterangan', DB::raw('MIN(id) as id'))
@@ -76,9 +77,9 @@ class KunjunganController extends Controller
             // 3. Logika Email (Ditaruh di luar Transaction agar jika email gagal, data DB tetap aman)
           // Bagian di KunjunganController
 try {
-    $pimpinan = User::where('prodi_id', $request->prodi_id)
-                    ->orWhere('role_id', 3)
-                    ->get();
+   $pimpinan = User::query()->where('prodi_id', $request->prodi_id)
+            ->orWhere('role_id', 3)
+            ->get();
 
     foreach ($pimpinan as $user) {
         $dataEmail = [
@@ -108,56 +109,89 @@ try {
     }
 
     // Fungsi lainnya (cekStatus, formSurvey, storeSurvey) tetap sama...
-    public function cekStatus(Kunjungan $kunjungan)
-    {
-        $durasi_menit = 0;
-        if ($kunjungan->waktu_selesai_layanan) {
-            $durasi_menit = round($kunjungan->created_at->diffInMinutes($kunjungan->waktu_selesai_layanan));
-        }
+   public function cekStatus(Kunjungan $kunjungan)
+{
+    // WAJIB: Muat relasi survey agar bisa dicek di Blade
+    $kunjungan->load('survey');
 
-        return view('proses', compact('kunjungan', 'durasi_menit'));
+    $durasi_menit = 0;
+    if ($kunjungan->waktu_selesai_layanan) {
+        $durasi_menit = round($kunjungan->created_at->diffInMinutes($kunjungan->waktu_selesai_layanan));
     }
 
-    public function formSurvey($id)
-    {
-        $kunjungan = Kunjungan::where('nomor_kunjungan', $id)->firstOrFail();
-        $nama_tamu = $kunjungan->pengunjung->nama_lengkap ?? session('nama_tamu', 'Tamu');
-        $aspek_survey = MasterAspekSurvey::with('pertanyaan')->get();
+    return view('proses', compact('kunjungan', 'durasi_menit'));
+}
 
-        $durasi_menit = 0;
-        if ($kunjungan->waktu_selesai_layanan) {
-            $durasi_menit = round($kunjungan->created_at->diffInMinutes($kunjungan->waktu_selesai_layanan));
-        }
-
-        return view('guest.form-survey', compact('kunjungan', 'aspek_survey', 'nama_tamu', 'durasi_menit'));
+   public function formSurvey($id)
+{
+    // Cari data kunjungan berdasarkan nomor_kunjungan
+   $kunjungan = Kunjungan::query()->where('nomor_kunjungan', $id)->firstOrFail();
+    if ($kunjungan->survey) {
+        return redirect()->route('kunjungan.status', $id)
+                         ->with('error', 'Anda sudah mengisi survey untuk antrean ini.');
     }
 
-    public function storeSurvey(Request $request)
-    {
-        $request->validate([
-            'nomor_kunjungan' => 'required',
-            'jawaban' => 'required|array',
-            'catatan' => 'nullable|string',
-        ]);
+    $nama_tamu = $kunjungan->pengunjung->nama_lengkap ?? session('nama_tamu', 'Tamu');
+    $aspek_survey = MasterAspekSurvey::with('pertanyaan')->get();
 
-        $kunjungan = Kunjungan::where('nomor_kunjungan', $request->nomor_kunjungan)->firstOrFail();
+    $durasi_menit = 0;
+    if ($kunjungan->waktu_selesai_layanan) {
+        $durasi_menit = round($kunjungan->created_at->diffInMinutes($kunjungan->waktu_selesai_layanan));
+    }
 
-        $survey = Survey::create([
+    return view('guest.form-survey', compact('kunjungan', 'aspek_survey', 'nama_tamu', 'durasi_menit'));
+}
+
+public function storeSurvey(Request $request)
+{
+    // 1. Validasi Input
+    $request->validate([
+        'nomor_kunjungan' => 'required',
+        'jawaban' => 'required|array',
+        'catatan' => 'nullable|string',
+    ]);
+
+    $kunjungan = \App\Models\Kunjungan::query()
+        ->where('nomor_kunjungan', $request->nomor_kunjungan)
+        ->first();
+
+    if (!$kunjungan) {
+        return back()->with('error', 'Data kunjungan tidak ditemukan.');
+    }
+
+    // 3. Logika Hitungan (Total Bintang * 4 untuk Skala 100)
+    // Tetap dipertahankan sesuai rumus Poin 3 / Tabel 3.7 Anda
+    $p1 = $request->jawaban[1] ?? 0;
+    $p2 = $request->jawaban[2] ?? 0;
+    $p3 = $request->jawaban[3] ?? 0;
+    $p4 = $request->jawaban[4] ?? 0;
+    $p5 = $request->jawaban[5] ?? 0;
+
+    $skor_total_y = ($p1 + $p2 + $p3 + $p4 + $p5) * 4;
+
+    // 4. Simpan ke Database dengan Transaction
+    DB::transaction(function () use ($request, $kunjungan, $skor_total_y, $p1, $p2, $p3, $p4, $p5) {
+
+        // Simpan ke tabel Survey (Skor skala 100)
+        $survey = \App\Models\Survey::create([
             'kunjungan_id' => $kunjungan->id,
             'kritik_saran' => $request->catatan,
+            'skor_total'   => $skor_total_y,
             'created_at'   => now(),
             'updated_at'   => now(),
         ]);
 
-        DetailSurvey::create([
+        // Simpan detail per pertanyaan (Bintang 1-5)
+        \App\Models\DetailSurvey::create([
             'survey_id' => $survey->id,
-            'p1' => $request->jawaban[1] ?? 0,
-            'p2' => $request->jawaban[2] ?? 0,
-            'p3' => $request->jawaban[3] ?? 0,
-            'p4' => $request->jawaban[4] ?? 0,
-            'p5' => $request->jawaban[5] ?? 0,
+            'p1' => $p1,
+            'p2' => $p2,
+            'p3' => $p3,
+            'p4' => $p4,
+            'p5' => $p5,
         ]);
+    });
 
-        return back()->with('success', 'Terima kasih atas ulasan Anda!');
-    }
+    return back()->with('success', 'Terima kasih atas ulasan Anda!');
+}
 }

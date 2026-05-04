@@ -52,6 +52,7 @@
                     <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Status Layanan</th>
                     <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Estimasi SLA</th>
                     <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Status SLA</th>
+                    <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Tanggal</th>
                     <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Status Pimpinan</th>
                     <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Aksi</th>
                 </tr>
@@ -109,6 +110,13 @@
                             <span class="text-indigo-400 text-[9px] font-black uppercase italic tracking-tighter">Sedang Berjalan</span>
                         @endif
                     </td>
+
+                    {{-- ISI DATA KOLOM TANGGAL --}}
+                    <td class="px-8 py-6 text-center">
+                        <p class="text-gray-800 font-bold text-sm">{{ \Carbon\Carbon::parse($k->tanggal)->translatedFormat('d M Y') }}</p>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">{{ $k->hari_kunjungan }}</p>
+                    </td>
+
 
                     <td class="px-8 py-6 text-center">
                         @if(in_array(Auth::user()->role_id, [3, 4]) && ($k->status_pimpinan == 'Menunggu' || empty($k->status_pimpinan)))
