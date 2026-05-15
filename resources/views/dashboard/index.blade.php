@@ -3,275 +3,438 @@
 @section('title', $judul_dashboard)
 
 @section('content')
-    {{-- Header Dashboard --}}
-    <div class="mb-10">
-        <h2 class="text-4xl font-black text-gray-800 tracking-tight leading-none">{{ $judul_dashboard }}</h2>
-        <div class="mt-4 flex items-center gap-3">
-            <span class="px-4 py-1.5 bg-indigo-100 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                {{ $user->prodi->nama ?? 'Seluruh Unit Kerja' }}
-            </span>
+<div class="min-h-screen bg-[#f6f7fb] px-4 sm:px-6 lg:px-8 py-6">
+
+    {{-- HEADER --}}
+    <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 mb-8">
+
+        <div class="space-y-2">
+            <h1 class="text-2xl md:text-4xl font-black text-slate-900 leading-tight">
+                Dashboard Admin
+            </h1>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="px-4 py-1.5 bg-indigo-100 text-indigo-600 rounded-full text-[10px] sm:text-[11px] font-black shadow-sm">
+                    {{ $user->prodi->nama ?? 'Seluruh Unit Kerja' }}
+                </span>
+
+                <span class="px-4 py-1.5 bg-emerald-100 text-emerald-600 rounded-full text-[10px] sm:text-[11px] font-black flex items-center gap-2 shadow-sm">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    Auto-Refresh: ON
+                </span>
+            </div>
         </div>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
+
+            {{-- FILTER --}}
+            @if($user->role_id == 1 || $user->role_id == 3)
+            <form action="{{ route('dashboard') }}" method="GET" class="w-full sm:w-auto">
+                <div class="relative group">
+                    <select name="prodi_id"
+                        onchange="this.form.submit()"
+                        class="w-full sm:w-[260px] bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-indigo-100 outline-none appearance-none transition-all cursor-pointer shadow-sm">
+                        <option value="">🌍 Seluruh Program Studi</option>
+                        @foreach($daftar_prodi as $p)
+                            <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }}>
+                                🎓 {{ $p->nama }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                </div>
+            </form>
+            @endif
+
+            <button class="bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-400 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all">
+                <i class="fa-solid fa-file-export mr-2"></i>
+                Ekspor Laporan
+            </button>
+
+        </div>
+
     </div>
 
-    {{-- BARIS 1: Statistik Cepat --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div class="card-stat bg-white p-8 rounded-[32px] shadow-sm border border-gray-50 flex items-center justify-between">
+    {{-- CARD STATISTIK --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-10">
+
+        {{-- TOTAL --}}
+        <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
-                <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Antrean</p>
-                <h3 class="text-4xl font-black text-gray-800">{{ $data_kunjungan->count() }}</h3>
+                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 mb-1">
+                    Total Kunjungan
+                </p>
+                <h2 class="text-3xl sm:text-4xl font-black text-slate-900">
+                    {{ $total_kunjungan }}
+                </h2>
             </div>
-            <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl sm:text-2xl shrink-0">
                 <i class="fa-solid fa-users"></i>
             </div>
         </div>
 
-        <div class="card-stat bg-white p-8 rounded-[32px] shadow-sm border border-gray-50 flex items-center justify-between">
+        {{-- SLA --}}
+        <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
-                <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Sedang Diproses</p>
-                <h3 class="text-4xl font-black text-gray-800">{{ $data_kunjungan->where('status_layanan', 'Diproses')->count() }}</h3>
+                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 mb-1">
+                    Efektivitas (SLA)
+                </p>
+                <h2 class="text-3xl sm:text-4xl font-black text-slate-900">
+                    {{ $efektivitas_persen }}%
+                </h2>
             </div>
-            <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-2xl">
-                <i class="fa-solid fa-spinner"></i>
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl sm:text-2xl shrink-0">
+                <i class="fa-solid fa-clock"></i>
             </div>
         </div>
 
-        <div class="card-stat bg-white p-8 rounded-[32px] shadow-sm border border-gray-50 flex items-center justify-between">
+        {{-- SURVEI --}}
+        <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow sm:col-span-2 xl:col-span-1">
             <div>
-                <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Selesai</p>
-                <h3 class="text-4xl font-black text-gray-800">{{ $data_kunjungan->where('status_layanan', 'Selesai')->count() }}</h3>
+                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 mb-1">
+                    Kualitas (Survei)
+                </p>
+                <h2 class="text-3xl sm:text-4xl font-black text-slate-900">
+                    {{ $kualitas_rating }}
+                </h2>
             </div>
-            <div class="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center text-2xl">
-                <i class="fa-solid fa-check-double"></i>
-            </div>
-        </div>
-    </div>
-
-    {{-- BARIS 2: Analytics KPI --}}
-    @if(isset($skor_kepuasan))
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-        <div class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-gray-50 shadow-sm">
-            <h3 class="text-xl font-black text-gray-800 mb-6">Tren Waktu Layanan (SLA)</h3>
-            <div class="h-[300px]">
-                <canvas id="slaChart"></canvas>
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-amber-100 text-amber-500 flex items-center justify-center text-xl sm:text-2xl shrink-0">
+                <i class="fa-solid fa-star"></i>
             </div>
         </div>
 
-        <div class="bg-white p-8 rounded-[2.5rem] border border-gray-50 shadow-sm flex flex-col items-center justify-center">
-            <h3 class="text-xl font-black text-gray-800 mb-4 self-start">Kepuasan</h3>
-            <div class="relative w-full max-w-[220px]">
-                <canvas id="satisfactionChart"></canvas>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <span class="text-4xl font-black text-gray-800">{{ $skor_kepuasan['persen'] }}%</span>
-                    <span class="text-[10px] font-bold text-emerald-500 uppercase">Puas</span>
-                </div>
-            </div>
-            <div class="flex justify-between w-full mt-6 text-center">
-                <div><p class="text-[10px] font-bold text-gray-400 uppercase">Puas</p><p class="font-black text-emerald-500">{{ $skor_kepuasan['puas'] }}</p></div>
-                <div><p class="text-[10px] font-bold text-gray-400 uppercase">Cukup</p><p class="font-black text-amber-500">{{ $skor_kepuasan['cukup'] }}</p></div>
-                <div><p class="text-[10px] font-bold text-gray-400 uppercase">Kurang</p><p class="font-black text-rose-500">{{ $skor_kepuasan['kurang'] }}</p></div>
-            </div>
-        </div>
-    </div>
-    @endif
-
-    {{-- BARIS 3: Daftar Kartu Antrean --}}
-    <div class="flex items-center gap-3 mb-8">
-        <h3 class="text-xl font-black text-gray-800 uppercase tracking-tighter">Daftar Antrean</h3>
-        <div class="h-[2px] flex-1 bg-gray-100 rounded-full"></div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    {{-- TITLE SECTION --}}
+    <div class="flex items-center gap-3 mb-6">
+        <div class="w-1.5 h-8 bg-indigo-600 rounded-full"></div>
+        <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            Antrean Layanan
+        </h3>
+    </div>
+
+    {{-- LIST ANTREAN --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
         @forelse($data_kunjungan as $k)
+
             @php
-                $isSelesai = $k->status_layanan == 'Selesai';
+                $isAntre = $k->status_layanan == 'Antre';
                 $isDiproses = $k->status_layanan == 'Diproses';
+                $isSelesai = $k->status_layanan == 'Selesai';
+
+                $isDitolak = $k->status_layanan == 'Ditolak';
+
+                $borderClass = $isDitolak 
+                    ? 'border-rose-500 bg-rose-50/20' 
+                    : ($isAntre 
+                        ? 'border-amber-300' 
+                        : ($isDiproses 
+                            ? 'border-blue-300' 
+                            : 'border-emerald-300'
+                        )
+                    );
+                $badgeClass = $isAntre ? 'bg-amber-100 text-amber-600' : ($isDiproses ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600');
             @endphp
 
-            <div class="bg-white border {{ $isDiproses ? 'border-indigo-500 ring-4 ring-indigo-50' : ($isSelesai ? 'border-emerald-100 bg-gray-50/30' : 'border-gray-100') }} rounded-[32px] p-8 transition-all hover:shadow-xl relative overflow-hidden">
+            <div class="bg-white rounded-[2rem] border-2 {{ $borderClass }} p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group relative overflow-hidden">
+                
+                {{-- Decorative Background Circle --}}
+                <div class="absolute -right-4 -top-4 w-20 h-20 bg-slate-50 rounded-full -z-0 group-hover:scale-150 transition-transform duration-500"></div>
 
-                {{-- Indikator Centang jika Selesai --}}
-                @if($isSelesai)
-                    <div class="absolute top-0 right-0 p-6">
-                        <i class="fa-solid fa-circle-check text-emerald-400 text-2xl opacity-50"></i>
+                <div class="relative z-10">
+                    {{-- HEADER CARD --}}
+                    <div class="flex items-start justify-between gap-4 mb-6">
+                        <div class="flex-1">
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest
+                                {{ $k->status_layanan == 'Ditolak' 
+                                    ? 'bg-rose-100 text-rose-600 ring-1 ring-rose-200' 
+                                    : $badgeClass }}">
+
+                                {{ $k->status_layanan }}
+                            </span>
+                            <h4 class="mt-4 text-xl font-black text-slate-900 leading-tight">
+                                {{ $k->pengunjung->nama_lengkap }}
+                            </h4>
+                            <p class="text-xs sm:text-sm font-bold text-slate-400 mt-1">
+                                <i class="fa-solid fa-building text-[10px] mr-1"></i> {{ $k->pengunjung->asal_instansi ?? '-' }}
+                            </p>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <h2 class="text-2xl sm:text-4xl font-black text-slate-800">
+                                {{ $k->nomor_kunjungan }}
+                            </h2>
+                            <p class="text-[10px] text-slate-400 font-bold mt-1">
+                                <i class="fa-regular fa-clock mr-1"></i>{{ $k->created_at->format('H:i') }}
+                            </p>
+                        </div>
                     </div>
-                @endif
 
-                <div class="flex justify-between items-start mb-6">
-                    <span class="px-4 py-1 {{ $isDiproses ? 'bg-indigo-600 text-white' : ($isSelesai ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500') }} rounded-full text-[10px] font-black uppercase tracking-widest">
-                        {{ $k->status_layanan }}
-                    </span>
-                    <h4 class="text-3xl font-black {{ $isSelesai ? 'text-gray-300' : 'text-gray-800' }}">{{ $k->nomor_kunjungan }}</h4>
-                </div>
+                    {{-- KEPERLUAN --}}
+<div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-6 min-h-[120px] flex flex-col">
 
-                <div class="mb-6">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Pengunjung</p>
-                    <h5 class="text-xl font-black {{ $isSelesai ? 'text-gray-400' : 'text-gray-800' }} leading-tight">{{ $k->pengunjung->nama_lengkap }}</h5>
-                    <p class="text-xs font-bold {{ $isSelesai ? 'text-gray-400' : 'text-indigo-500' }}">{{ $k->pengunjung->asal_instansi }}</p>
-                </div>
+    <p class="text-[10px] uppercase font-black tracking-widest text-indigo-500 mb-3">
+        Keperluan
+    </p>
 
-                <div class="p-4 {{ $isSelesai ? 'bg-white' : 'bg-gray-50' }} rounded-2xl mb-8">
-                    <p class="text-[9px] font-bold text-gray-400 uppercase mb-1">Keperluan</p>
-                    <p class="text-sm font-bold {{ $isSelesai ? 'text-gray-400' : 'text-gray-700' }}">{{ $k->keperluan_master->keterangan ?? 'Lainnya' }}</p>
-
-                    @if($isSelesai && $k->waktu_selesai_layanan)
-                        <div class="mt-2 pt-2 border-t border-emerald-50">
-                            <p class="text-[9px] font-bold text-emerald-500 uppercase mb-1">Waktu Selesai</p>
-                            <p class="text-[11px] font-black text-emerald-600">{{ \Carbon\Carbon::parse($k->waktu_selesai_layanan)->format('H:i') }} WIB</p>
-                        </div>
-                    @elseif($k->keperluan)
-                        <div class="mt-2 pt-2 border-t border-gray-200/50">
-                            <p class="text-[11px] font-medium text-gray-600 italic">"{{ $k->keperluan }}"</p>
-                        </div>
-                    @endif
-                </div>
-
-                <div class="flex gap-3">
-                    @if($k->status_layanan == 'Antre')
-                        <button onclick="bukaModalProses('{{ $k->nomor_kunjungan }}')"
-                                class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100">
-                            Mulai Proses
-                        </button>
-                    @elseif($isDiproses)
-                        <form id="form-selesai-{{ $k->id }}" action="{{ route('kunjungan.selesai', $k->id) }}" method="POST" class="w-full">
-                            @csrf
-                            <button type="button" onclick="konfirmasiSelesai('{{ $k->id }}', '{{ $k->nomor_kunjungan }}')"
-                                    class="w-full bg-emerald-500 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-check-circle"></i> Selesaikan
-                            </button>
-                        </form>
-                    @else
-                        <div class="w-full bg-gray-100 text-gray-400 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center">
-                            <i class="fa-solid fa-lock mr-1"></i> Layanan Selesai
-                        </div>
-                    @endif
-                </div>
-            </div>
-        @empty
-            <div class="col-span-full py-20 text-center">
-                <i class="fa-solid fa-folder-open text-4xl text-gray-200 mb-4"></i>
-                <p class="text-gray-400 font-bold italic">Tidak ada data antrean aktif.</p>
-            </div>
-        @endforelse
+    {{-- KE PERLUAN UTAMA (MASTER) --}}
+    <div class="mb-3">
+        <p class="text-[9px] uppercase font-black text-slate-400 tracking-widest">
+            Jenis
+        </p>
+        <p class="text-sm font-bold text-slate-700 italic">
+            {{ $k->keperluan_master->keterangan ?? '-' }}
+        </p>
     </div>
 
-    {{-- MODAL PROSES SLA --}}
-    <div id="modalProsesSLA" class="fixed inset-0 z-50 hidden">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="tutupModal()"></div>
-            <div class="relative bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl">
-                <h3 class="text-2xl font-black mb-6">Tentukan Estimasi Waktu</h3>
-                <form id="formSLA" method="POST">
-                    @csrf
-                    <div class="grid grid-cols-2 gap-4 mb-6">
-                        <input type="number" name="estimasi_sla" placeholder="Contoh: 15" class="bg-gray-50 border-none rounded-2xl p-4 font-bold" required>
-                        <select name="satuan_sla" class="bg-gray-50 border-none rounded-2xl p-4 font-bold">
-                            <option value="Menit">Menit</option>
-                            <option value="Hari">Hari</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg shadow-indigo-100">Konfirmasi & Mulai</button>
-                </form>
-            </div>
+    {{-- DETAIL KEPERLUAN (INPUT USER) --}}
+    @if(!empty($k->keperluan))
+        <div>
+            <p class="text-[9px] uppercase font-black text-slate-400 tracking-widest">
+                Detail
+            </p>
+            <p class="text-sm font-medium text-slate-600 leading-relaxed italic">
+                "{{ $k->keperluan }}"
+            </p>
         </div>
-    </div>
-@endsection
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-    // 1. Konfirmasi Selesai dengan SweetAlert2
-    function konfirmasiSelesai(id, nomor) {
-        Swal.fire({
-            title: 'Selesaikan Antrean?',
-            text: "Antrean " + nomor + " akan ditandai sebagai selesai.",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#10b981',
-            cancelButtonColor: '#f43f5e',
-            confirmButtonText: 'Ya, Selesai!',
-            cancelButtonText: 'Batal',
-            reverseButtons: true,
-            borderRadius: '2rem',
-            customClass: {
-                popup: 'rounded-[2.5rem]',
-                confirmButton: 'rounded-xl px-5 py-3 font-bold uppercase text-[10px] tracking-widest',
-                cancelButton: 'rounded-xl px-5 py-3 font-bold uppercase text-[10px] tracking-widest'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire({
-                    title: 'Memproses...',
-                    allowOutsideClick: false,
-                    didOpen: () => { Swal.showLoading() }
-                });
-                document.getElementById('form-selesai-' + id).submit();
-            }
-        })
-    }
-
-    // 2. Alert Sukses dari Session
-    @if(session('success'))
-        Swal.fire({
-            icon: 'success',
-            title: 'Berhasil!',
-            text: "{{ session('success') }}",
-            showConfirmButton: false,
-            timer: 2500,
-            borderRadius: '2rem',
-            customClass: { popup: 'rounded-[2.5rem]' }
-        });
     @endif
 
-    // 3. Fungsi Modal SLA
-    function bukaModalProses(noAntrean) {
+</div>
+
+                    {{-- FOOTER BUTTONS --}}
+                    <div class="mt-auto flex flex-col sm:flex-row gap-3">
+                        @if($isAntre)
+                            <button onclick="bukaModalProses('{{ $k->nomor_kunjungan }}')"
+                                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100">
+                                <i class="fa-solid fa-play mr-2"></i> Proses
+                            </button>
+                            <form action="{{ route('kunjungan.tolak', $k->id) }}" method="POST" class="flex-1">
+                                @csrf
+                                <button type="button"
+                                    onclick="bukaModalTolak('{{ $k->id }}')"
+                                    class="w-full border-2 border-rose-100 text-rose-500 hover:bg-rose-50 hover:border-rose-200 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
+
+                                    <i class="fa-solid fa-xmark mr-2"></i> Tolak
+                                </button>
+                            </form>
+                        @elseif($isDiproses)
+                            <form id="form-selesai-{{ $k->id }}" action="{{ route('kunjungan.selesai', $k->id) }}" method="POST" class="w-full">
+                                @csrf
+                                <button type="button" onclick="konfirmasiSelesai('{{ $k->id }}', '{{ $k->nomor_kunjungan }}')"
+                                    class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-emerald-100">
+                                    <i class="fa-solid fa-check mr-2"></i> Tandai Selesai
+                                </button>
+                            </form>
+                        @elseif($isSelesai)
+                            <div class="w-full bg-emerald-50 border border-emerald-200 text-emerald-600 py-3.5 rounded-2xl text-center font-black text-xs uppercase tracking-widest">
+                                <i class="fa-solid fa-check-double mr-2"></i> Layanan Selesai
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+        @empty
+            <div class="col-span-full bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem] py-20 px-6 text-center">
+                <div class="w-20 h-20 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-300 text-3xl mb-5">
+                    <i class="fa-solid fa-inbox"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-500">Belum Ada Antrean</h3>
+                <p class="text-slate-400 mt-2 text-sm max-w-xs mx-auto">
+                    Antrean baru yang masuk akan muncul secara otomatis di sini.
+                </p>
+            </div>
+        @endforelse
+
+    </div>
+</div>
+
+{{-- MODAL TOLAK - Fully Responsive --}}
+<div id="modalTolak" class="fixed inset-0 z-[999] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+
+    <div class="bg-white w-full max-w-md rounded-[2rem] p-6 shadow-2xl">
+
+        <div class="mb-5">
+            <h2 class="text-xl font-black text-slate-900">Tolak Antrean</h2>
+            <p class="text-sm text-slate-400 mt-1">Wajib isi alasan penolakan</p>
+        </div>
+
+        <form id="formTolak" method="POST">
+            @csrf
+
+            <textarea name="alasan_tolak" required
+                class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-medium focus:ring-4 focus:ring-rose-100 outline-none"
+                placeholder="Contoh: Dokumen tidak lengkap / data tidak valid"></textarea>
+
+            <div class="flex gap-3 mt-5">
+
+                <button type="button"
+                    onclick="tutupModalTolak()"
+                    class="flex-1 py-3 rounded-2xl bg-slate-100 text-slate-600 font-black text-xs uppercase">
+
+                    Batal
+                </button>
+
+                <button type="submit"
+                    class="flex-1 py-3 rounded-2xl bg-rose-600 text-white font-black text-xs uppercase shadow-lg">
+
+                    Kirim Penolakan
+                </button>
+
+            </div>
+        </form>
+
+    </div>
+</div>
+{{-- MODAL SLA - Fully Responsive --}}
+<div id="modalProsesSLA" class="fixed inset-0 z-[999] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
+
+    <div class="bg-white w-full max-w-md rounded-[2.5rem] p-6 sm:p-10 shadow-2xl transform transition-all scale-95 opacity-0" id="modalContentSLA">
+        
+        <div class="text-center mb-6">
+
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl sm:text-3xl mx-auto mb-5 shadow-inner">
+                <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Estimasi Layanan
+            </h2>
+
+            <p class="text-slate-400 text-xs sm:text-sm mt-2 font-medium">
+                Tentukan waktu pelayanan secara realistis
+            </p>
+
+        </div>
+
+        {{-- ⚠️ WARNING BOX --}}
+        <div class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200">
+
+            <p class="text-[10px] uppercase font-black tracking-widest text-amber-600 mb-2">
+                Perhatian
+            </p>
+
+            <p class="text-xs text-amber-700 font-semibold leading-relaxed">
+                Estimasi hanya bisa diinput <b>1 kali</b>.  
+                Pastikan sudah sesuai dengan <b>jenis keperluan</b> dan perkiraan waktu pengerjaan layanan.
+            </p>
+
+        </div>
+
+        <form id="formSLA" method="POST">
+
+            @csrf
+
+            <div class="grid grid-cols-1 gap-5 mb-8">
+
+                <div class="space-y-2">
+                    <label class="text-[10px] uppercase font-black text-slate-400 ml-2 tracking-widest">
+                        Durasi Pelayanan
+                    </label>
+
+                    <input type="number" name="estimasi_sla" required 
+                        class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 font-bold focus:ring-4 focus:ring-indigo-100 outline-none transition-all placeholder:text-slate-300"
+                        placeholder="Contoh: 15">
+                </div>
+
+                <div class="space-y-2">
+
+                    <label class="text-[10px] uppercase font-black text-slate-400 ml-2 tracking-widest">
+                        Satuan Waktu
+                    </label>
+
+                    <div class="relative appearance-none">
+
+                        <select name="satuan_sla" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 font-bold focus:ring-4 focus:ring-indigo-100 outline-none appearance-none transition-all">
+
+                            <option value="Menit">Menit</option>
+                            <option value="Hari">Hari</option>
+
+                        </select>
+
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+
+                <button type="button" onclick="tutupModal()"
+                    class="order-2 sm:order-1 flex-1 py-4 rounded-2xl bg-slate-100 text-slate-500 font-black uppercase text-[11px] tracking-widest hover:bg-slate-200 transition-colors">
+
+                    Kembali
+                </button>
+
+                <button type="submit"
+                    class="order-1 sm:order-2 flex-1 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-[11px] tracking-widest shadow-lg shadow-indigo-200 transition-all">
+
+                    Mulai Sekarang
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<script>
+    function bukaModalProses(nomor) {
+        const modal = document.getElementById('modalProsesSLA');
+        const content = document.getElementById('modalContentSLA');
         const form = document.getElementById('formSLA');
-        form.action = `/dashboard/mulai-proses/${noAntrean}`;
-        document.getElementById('modalProsesSLA').classList.remove('hidden');
+        
+        form.action = `/dashboard/mulai-proses/${nomor}`; // Sesuaikan URL Route Anda
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // Animasi
+        setTimeout(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 10);
     }
 
     function tutupModal() {
-        document.getElementById('modalProsesSLA').classList.add('hidden');
+        const modal = document.getElementById('modalProsesSLA');
+        const content = document.getElementById('modalContentSLA');
+        
+        content.classList.add('scale-95', 'opacity-0');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 200);
     }
 
-    // 4. Inisialisasi Grafik (Jika Ada)
-    @if(isset($skor_kepuasan))
-    new Chart(document.getElementById('satisfactionChart'), {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: [{{ $skor_kepuasan['puas'] }}, {{ $skor_kepuasan['cukup'] }}, {{ $skor_kepuasan['kurang'] }}],
-                backgroundColor: ['#10b981', '#f59e0b', '#f43f5e'],
-                borderWidth: 0, cutout: '85%', borderRadius: 20
-            }]
-        },
-        options: { plugins: { legend: { display: false } } }
-    });
-
-    new Chart(document.getElementById('slaChart'), {
-        type: 'line',
-        data: {
-            labels: {!! json_encode($label_sla) !!},
-            datasets: [{
-                label: 'Tepat Waktu',
-                data: {!! json_encode($data_tepat_waktu) !!},
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                fill: true, tension: 0.4
-            }, {
-                label: 'Terlambat',
-                data: {!! json_encode($data_terlambat) !!},
-                borderColor: '#f43f5e',
-                fill: false, tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } }
+    function konfirmasiSelesai(id, nomor) {
+        if(confirm(`Selesaikan antrean nomor ${nomor}?`)) {
+            document.getElementById(`form-selesai-${id}`).submit();
         }
-    });
-    @endif
+    }
 </script>
-@endpush
+<script>
+function bukaModalTolak(id) {
+    const form = document.getElementById('formTolak');
+
+    form.action = `/dashboard/tolak/${id}`;
+
+    document.getElementById('modalTolak').classList.remove('hidden');
+    document.getElementById('modalTolak').classList.add('flex');
+}
+
+function tutupModalTolak() {
+    document.getElementById('modalTolak').classList.add('hidden');
+    document.getElementById('modalTolak').classList.remove('flex');
+}
+</script>
+
+@endsection

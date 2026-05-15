@@ -18,22 +18,25 @@ class DashboardController extends Controller
     /**
      * Helper Private Method untuk Filter Akses
      */
-    private function applyAccessFilter($query, $user)
-    {
-        if ($user->role_id == 1 || $user->role_id == 3) {
-            return $query;
-        }
-
-        if ($user->prodi_id) {
-            $query->where('prodi_id', $user->prodi_id);
-        } else {
-             $query->whereRaw('1 = 0');
-        }
-
+private function applyAccessFilter($query, $user)
+{
+    // Role 1 (Super) & Role 3 (Kajur) bisa melihat semua data (Global)
+    if ($user->role_id == 1 || $user->role_id == 3) {
         return $query;
     }
 
-    public function index()
+    // Role 2 (Admin Prodi) & Role 4 (Kaprodi) hanya melihat data prodi mereka
+    if (in_array($user->role_id, [2, 4])) {
+        if ($user->prodi_id) {
+            return $query->where('prodi_id', $user->prodi_id);
+        }
+    }
+
+    // Default: Tidak ada data jika prodi_id kosong
+    return $query->whereRaw('1 = 0');
+}
+
+public function index()
     {
         $user = Auth::user();
 
@@ -41,20 +44,56 @@ class DashboardController extends Controller
             return $this->analytics();
         }
 
-        $query = Kunjungan::with(['pengunjung', 'prodi'])->latest();
+        $query = Kunjungan::with(['pengunjung', 'prodi', 'keperluan_master'])->latest();
         $query = $this->applyAccessFilter($query, $user);
 
         $isGlobal = ($user->role_id == 1 || $user->email === 'kajur.elektro@poliban.ac.id');
+
+        // --- 1. MENGHITUNG TOTAL KUNJUNGAN ---
+        $totalKunjungan = (clone $query)->count();
+
+        // --- 2. MENGHITUNG EFEKTIVITAS (SLA) ---
+        $querySelesai = (clone $query)->where('status_layanan', 'Selesai');
+        $totalSelesai = $querySelesai->count();
+        $totalSkorPelayanan = $querySelesai->sum('skor_pelayanan');
+        
+        $efektivitas = 0;
+        if ($totalSelesai > 0) {
+            $efektivitas = round(($totalSkorPelayanan / $totalSelesai) * 100);
+        }
+        $efektivitas = max(0, min(100, $efektivitas));
+
+        // --- 3. MENGHITUNG KUALITAS RATING (SURVEI BINTANG) ---
+        $dataSurvey = (clone $query)->whereHas('survey.detail')->with('survey.detail')->get();
+        $totalBintang = 0;
+        $jumlahResponden = $dataSurvey->count();
+
+        foreach ($dataSurvey as $k) {
+            $detail = $k->survey->detail;
+            // Menjumlahkan jawaban P1 sampai P5 (Maksimal 25 per pengunjung)
+            $totalBintang += ($detail->p1 + $detail->p2 + $detail->p3 + $detail->p4 + $detail->p5);
+        }
+
+        $kualitasRating = '-'; // Default jika belum ada pengunjung yang mengisi survei
+        if ($jumlahResponden > 0) {
+            // Karena ada 5 pertanyaan, kita bagi total responden dikali 5
+            $rataRata = $totalBintang / ($jumlahResponden * 5);
+            // Format agar tampilannya jadi 1 angka di belakang koma (contoh: 4.8)
+            $kualitasRating = number_format(round($rataRata, 1), 1); 
+        }
 
         return view('dashboard.index', [
             'user' => $user,
             'isGlobal' => $isGlobal,
             'judul_dashboard' => 'Dashboard Utama',
-            'data_kunjungan' => $query->get()
+            'data_kunjungan' => $query->get(),
+            'total_kunjungan' => $totalKunjungan,
+            'efektivitas_persen' => $efektivitas,
+            'kualitas_rating' => $kualitasRating // <-- Variabel ini ditambahkan agar baris 42 tidak error
         ]);
     }
 
-  public function analytics()
+public function analytics()
 {
     $user = Auth::user();
     $query = Kunjungan::query();
@@ -62,69 +101,67 @@ class DashboardController extends Controller
 
     $dataSurvey = (clone $query)->whereHas('survey.detail')->with('survey.detail')->get();
 
-    // Nama variabel tetap dipertahankan agar Blade tidak error
-    $puas = 0;   // Mewakili "Sangat Baik & Baik" (Skor 61 - 100)
-    $cukup = 0;  // Mewakili "Kurang Baik" (Skor 41 - 60)
-    $kurang = 0; // Mewakili "Sangat Kurang Baik" (Skor 20 - 40)
-
+    // --- Logika Kepuasan (Tetap) ---
+    $puas = 0; $cukup = 0; $kurang = 0;
     foreach ($dataSurvey as $kunjungan) {
         $detail = $kunjungan->survey->detail;
-
-        // RUMUS REVISI DOSPEM: Total Bintang dikali 4 (Skala 100)
         $skorY = ($detail->p1 + $detail->p2 + $detail->p3 + $detail->p4 + $detail->p5) * 4;
-
-        // Klasifikasi masuk ke variabel yang sudah ada
-        if ($skorY >= 61) {
-            $puas++; // Gabungan Baik dan Sangat Baik
-        } elseif ($skorY >= 41) {
-            $cukup++; // Kurang Baik
-        } else {
-            $kurang++; // Sangat Kurang Baik
-        }
+        if ($skorY >= 61) { $puas++; } 
+        elseif ($skorY >= 41) { $cukup++; } 
+        else { $kurang++; }
     }
 
     $totalCount = $dataSurvey->count();
     $persentasePuas = $totalCount > 0 ? round(($puas / $totalCount) * 100) : 0;
-
-    // Tambahkan variabel is_na untuk dashboard abu-abu jika 0 tamu
     $is_na = ($totalCount == 0);
 
-    // --- Query Distribusi & SLA tetap seperti kode asli Anda ---
-    $distribusi = (clone $query)->join('master_keperluan', 'kunjungan.keperluan_id', '=', 'master_keperluan.id')
+    // --- Perbaikan Query SLA ---
+    $tujuhHariLalu = Carbon::today()->subDays(6);
+    
+    // Ambil semua data dalam range 7 hari yang sudah memiliki status_sla
+    $dataSlaRaw = (clone $query)
+    ->whereDate('created_at', '>=', $tujuhHariLalu)
+    ->whereNotNull('status_sla')
+    ->select(
+        DB::raw('DATE(created_at) as tanggal'), 
+        'status_sla', 
+        DB::raw('count(*) as total')
+    )
+    ->groupBy(DB::raw('DATE(created_at)'), 'status_sla') // Perbaikan utama di sini
+    ->get();
+
+    $label_sla = []; 
+    $data_tepat_waktu = []; 
+    $data_terlambat = [];
+
+    for ($i = 0; $i < 7; $i++) {
+        $date = Carbon::today()->subDays(6 - $i)->format('Y-m-d');
+        $label_sla[] = Carbon::parse($date)->format('d M');
+
+        // Filter dengan membandingkan format tanggal Y-m-d dan Case-Insensitive status
+        $data_tepat_waktu[] = (int) $dataSlaRaw->filter(function($item) use ($date) {
+            return Carbon::parse($item->tanggal)->format('Y-m-d') == $date 
+                   && strtoupper($item->status_sla) == 'TEPAT WAKTU';
+        })->sum('total');
+
+        $data_terlambat[] = (int) $dataSlaRaw->filter(function($item) use ($date) {
+            return Carbon::parse($item->tanggal)->format('Y-m-d') == $date 
+                   && strtoupper($item->status_sla) == 'TERLAMBAT';
+        })->sum('total');
+    }
+
+    // --- Query Distribusi Keperluan ---
+    $distribusi = (clone $query)
+        ->join('master_keperluan', 'kunjungan.keperluan_id', '=', 'master_keperluan.id')
         ->select('master_keperluan.keterangan as keperluan', DB::raw('count(*) as total'))
         ->groupBy('master_keperluan.keterangan')->get();
 
-    $tujuhHariLalu = Carbon::today()->subDays(6);
-    $dataSla = (clone $query)->whereDate('created_at', '>=', $tujuhHariLalu)
-        ->whereNotNull('status_sla')
-        ->selectRaw('DATE(created_at) as tanggal, status_sla, count(*) as total')
-        ->groupByRaw('DATE(created_at), status_sla')->get();
-
-    $label_sla = []; $data_tepat_waktu = []; $data_terlambat = [];
-   // --- Bagian yang harus diperbaiki ---
-for ($i = 0; $i < 7; $i++) {
-    $date = Carbon::today()->subDays(6 - $i)->format('Y-m-d');
-    $label_sla[] = Carbon::parse($date)->format('d M');
-
-    // Gunakan huruf kapital semua sesuai yang tersimpan di database Anda
-    $data_tepat_waktu[] = (int) $dataSla->where('tanggal', $date)
-                                        ->where('status_sla', 'TEPAT WAKTU') // Diubah ke kapital
-                                        ->sum('total');
-
-    $data_terlambat[] = (int) $dataSla->where('tanggal', $date)
-                                      ->where('status_sla', 'TERLAMBAT') // Diubah ke kapital
-                                      ->sum('total');
-}
-
     return view('dashboard.analytics', [
         'user' => $user,
-        'is_na' => $is_na, // Kirim status N/A
+        'is_na' => $is_na,
         'judul_dashboard' => 'Analytics KPI',
         'skor_kepuasan' => [
-            'puas' => $puas,
-            'cukup' => $cukup,
-            'kurang' => $kurang,
-            'persen' => $persentasePuas
+            'puas' => $puas, 'cukup' => $cukup, 'kurang' => $kurang, 'persen' => $persentasePuas
         ],
         'distribusi_label' => $distribusi->pluck('keperluan'),
         'distribusi_data' => $distribusi->pluck('total'),
@@ -236,15 +273,18 @@ for ($i = 0; $i < 7; $i++) {
         return back()->with('success', 'Antrean ' . $kunjungan->nomor_kunjungan . ' berhasil diproses.');
     }
 
-    public function tolak(Kunjungan $kunjungan)
-    {
-        $kunjungan->update([
-            'status_layanan' => 'Ditolak',
-            'user_id' => Auth::id(),
-        ]);
+public function tolak(Request $request, $id)
+{
+    $kunjungan = Kunjungan::findOrFail($id);
 
-        return back()->with('success', 'Antrean ' . $kunjungan->nomor_kunjungan . ' telah ditolak.');
-    }
+    $kunjungan->update([
+        'status_layanan' => 'Ditolak',
+        'alasan_tolak' => $request->alasan_tolak,
+        'user_id' => Auth::id(),
+    ]);
+
+    return back()->with('success', 'Antrean ditolak');
+}
 
    public function selesai(Request $request, $id)
 {
@@ -262,7 +302,7 @@ $kunjungan = Kunjungan::query() // Tambahkan query()
     $estimasi = $kunjungan->estimasi_sla ?? 30;
     $satuan = $kunjungan->satuan_sla ?? 'Menit';
 
-    $batasWaktu = $kunjungan->created_at->copy();
+    $batasWaktu = $kunjungan->updated_at->copy();
     if ($satuan == 'Hari') {
         $batasWaktu->addDays($estimasi);
     } else {
@@ -311,22 +351,34 @@ if ($waktuSelesai->greaterThan($batasWaktu)) {
     return back()->with('success', 'Layanan Selesai. Skor Pelayanan: ' . $skorPelayanan);
 }
 
-    public function kirimEmailPimpinan(Request $request)
-    {
-        $request->validate([
-            'kunjungan_id' => 'required|exists:kunjungan,id',
-            'email_pimpinan' => 'required|email'
+public function kirimEmailPimpinan(Request $request)
+{
+    $request->validate([
+        'kunjungan_id' => 'required|exists:kunjungan,id',
+        'email_pimpinan' => 'required|email'
+    ]);
+
+    $kunjungan = Kunjungan::with(['pengunjung', 'prodi'])
+                    ->findOrFail($request->kunjungan_id);
+
+    try {
+
+        Mail::to($request->email_pimpinan)
+            ->send(new NotifikasiPimpinanMail($kunjungan));
+
+        // UPDATE STATUS EMAIL TERKIRIM
+        $kunjungan->update([
+            'is_email_sent' => 1
         ]);
 
-        $kunjungan = Kunjungan::with(['pengunjung', 'prodi'])->findOrFail($request->kunjungan_id);
+        return back()->with('success', 'Email berhasil diteruskan.');
 
-        try {
-            Mail::to($request->email_pimpinan)->send(new NotifikasiPimpinanMail($kunjungan));
-            return back()->with('success', 'Email berhasil diteruskan.');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengirim email.');
-        }
+    } catch (\Exception $e) {
+
+        return back()->with('error', 'Gagal mengirim email.');
+
     }
+}
 
     public function controlPanel()
     {
@@ -343,12 +395,23 @@ if ($waktuSelesai->greaterThan($batasWaktu)) {
         ]);
     }
 
-    public function destroyKeperluan($id)
-    {
-        if (Auth::user()->role_id != 1) return abort(403);
-        DB::table('master_keperluan')->where('id', $id)->delete();
-        return back()->with('success', 'Pilihan keperluan berhasil dihapus.');
+public function destroyKeperluan($id)
+{
+    if (Auth::user()->role_id != 1) return abort(403);
+
+    // 1. CEK DULU: Apakah keperluan ini sedang dipakai di tabel kunjungan?
+    $sedangDipakai = DB::table('kunjungan')->where('keperluan_id', $id)->exists();
+
+    // 2. JIKA DIPAKAI: Tolak penghapusan dan kembalikan pesan error
+    if ($sedangDipakai) {
+        return back()->with('error', 'Gagal menghapus! Pilihan keperluan ini tidak bisa dihapus karena sedang digunakan oleh riwayat/antrean pengunjung.');
     }
+
+    // 3. JIKA AMAN: Silakan hapus
+    DB::table('master_keperluan')->where('id', $id)->delete();
+    
+    return back()->with('success', 'Pilihan keperluan berhasil dihapus.');
+}
 
     public function storeKeperluan(Request $request)
     {
@@ -400,4 +463,3 @@ $kunjungan = Kunjungan::query() // Tambahkan query()
         return back()->with('success', 'Tanggapan berhasil disimpan!');
     }
 }
-

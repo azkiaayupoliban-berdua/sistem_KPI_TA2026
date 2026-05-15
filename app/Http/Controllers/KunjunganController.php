@@ -8,6 +8,7 @@ use App\Models\Kunjungan;
 use App\Models\MasterProdiInstansi;
 use App\Models\MasterKeperluan;
 use App\Models\MasterAspekSurvey;
+use App\Models\MasterUser;
 use App\Models\Survey;
 use App\Models\DetailSurvey;
 use Carbon\Carbon;
@@ -31,82 +32,149 @@ class KunjunganController extends Controller
         return view('landing', compact('prodi', 'keperluan'));
     }
 
-    public function store(Request $request)
-    {
-        // 1. Validasi Input
-        $request->validate([
-            'nama_lengkap' => 'required|string|max:50',
-            'no_telepon' => 'required|string|max:15',
-            'asal_instansi' => 'required|string|max:50',
-            'prodi_id' => 'required|integer',
-            'keperluan_id' => 'required|integer'
-        ]);
+public function store(Request $request)
+{
+    // 1. Validasi Input
+    $request->validate([
+        'nama_lengkap'   => 'required|string|max:50',
+        'no_telepon'     => 'required|string|max:15',
+        'asal_instansi'  => 'required|string|max:50',
+        'prodi_id'       => 'required|integer',
+        'keperluan_id'   => 'required|integer'
+    ]);
 
-        try {
-            // 2. Gunakan Transaction agar data Pengunjung & Kunjungan masuk serentak
-            $kunjungan = DB::transaction(function () use ($request) {
+    try {
 
-                // Simpan atau ambil pengunjung
-                $pengunjung = Pengunjung::firstOrCreate(
-                    ['no_telepon' => $request->no_telepon],
-                    [
-                        'nama_lengkap' => $request->nama_lengkap,
-                        'identitas_no' => $request->identitas_no,
-                        'asal_instansi' => $request->asal_instansi
-                    ]
-                );
+        // =========================================
+        // TRANSACTION
+        // =========================================
+        $kunjungan = DB::transaction(function () use ($request) {
 
-                // Buat nomor antrean
-                $nomor_kunjungan = 'IN-' . date('ymd') . '-' . rand(100, 999);
+            // =========================================
+            // SIMPAN / AMBIL PENGUNJUNG
+            // =========================================
+            $pengunjung = Pengunjung::firstOrCreate(
+                [
+                    'no_telepon' => $request->no_telepon
+                ],
+                [
+                    'nama_lengkap' => $request->nama_lengkap,
+                    'identitas_no' => $request->identitas_no,
+                    'asal_instansi'=> $request->asal_instansi
+                ]
+            );
 
-                // Simpan data Kunjungan
-              // Simpan data Kunjungan dengan menyertakan status default pimpinan
-        return Kunjungan::create([
-            'nomor_kunjungan' => $nomor_kunjungan,
-            'pengunjung_id'   => $pengunjung->id,
-            'prodi_id'        => $request->prodi_id,
-            'keperluan_id'    => $request->keperluan_id,
-            'keperluan'       => $request->catatan_keperluan ?? '-',
-            'hari_kunjungan'  => Carbon::now()->isoFormat('dddd'),
-            'tanggal'         => Carbon::now()->toDateString(),
-            'status_layanan'  => 'Antre',
-            'status_pimpinan' => 'Menunggu', // Tambahkan ini untuk memenuhi kolom di DB Anda
-        ]);
-            });
+            // =========================================
+            // AMBIL DATA MASTER KEPERLUAN
+            // =========================================
+            $masterKeperluan = MasterKeperluan::find($request->keperluan_id);
 
-            // 3. Logika Email (Ditaruh di luar Transaction agar jika email gagal, data DB tetap aman)
-          // Bagian di KunjunganController
-try {
-   $pimpinan = User::query()->where('prodi_id', $request->prodi_id)
-            ->orWhere('role_id', 3)
-            ->get();
+            // =========================================
+            // GABUNGKAN DROPDOWN + DETAIL
+            // =========================================
+            $keperluanGabungan = $masterKeperluan->keterangan ?? '-';
 
-    foreach ($pimpinan as $user) {
-        $dataEmail = [
-            'kunjungan' => $kunjungan,
-            'url_login' => url('/login')
-        ];
+            if (!empty($request->catatan_keperluan)) {
 
-        // Ganti nama view di sini agar sesuai dengan file yang Anda buat
-        Mail::send('emails.notifikasi_kunjungan', $dataEmail, function($message) use ($user) {
-            $message->to($user->email)
-                    ->subject('Notifikasi Antrean Baru');
+                $keperluanGabungan .= ' - ' . $request->catatan_keperluan;
+            }
+
+            // =========================================
+            // BUAT NOMOR ANTREAN
+            // =========================================
+            $nomor_kunjungan = 'IN-' . date('ymd') . '-' . rand(100, 999);
+
+            // =========================================
+            // SIMPAN KUNJUNGAN
+            // =========================================
+return Kunjungan::create([
+
+    'nomor_kunjungan' => $nomor_kunjungan,
+
+    'pengunjung_id'   => $pengunjung->id,
+
+    'prodi_id'        => $request->prodi_id,
+
+    'keperluan_id'    => $request->keperluan_id,
+
+    // HANYA DETAIL TAMBAHAN
+    'keperluan'       => $request->catatan_keperluan ?? '-',
+
+    'hari_kunjungan'  => Carbon::now()->isoFormat('dddd'),
+
+    'tanggal'         => Carbon::now()->toDateString(),
+
+    'status_layanan'  => 'Antre',
+
+    'status_pimpinan' => 'Menunggu',
+]);
         });
-    }
-} catch (\Exception $e) {
-    // Jika email gagal, hanya catat di log, jangan hentikan proses redirect sukses
-    Log::warning("Email pimpinan gagal: " . $e->getMessage());
-}
 
-            // 4. Redirect sukses
-            return redirect()->route('kunjungan.status', ['kunjungan' => $kunjungan->nomor_kunjungan])
-                             ->with('success', 'Pendaftaran antrean berhasil!');
+        // =========================================
+        // KIRIM EMAIL PIMPINAN
+        // =========================================
+        try {
+
+            $pimpinan = MasterUser::query()
+    ->where(function ($query) use ($request) {
+
+        $query->where('role_id', 4)
+              ->where('prodi_id', $request->prodi_id);
+
+    })
+    ->orWhere('role_id', 3)
+    ->get();
+
+            foreach ($pimpinan as $user) {
+
+                $dataEmail = [
+                    'kunjungan' => $kunjungan,
+                    'url_login' => url('/login')
+                ];
+
+                Mail::send(
+                    'emails.notifikasi_kunjungan',
+                    $dataEmail,
+                    function($message) use ($user) {
+
+                        $message->to($user->email)
+                                ->subject('Notifikasi Antrean Baru');
+                    }
+                );
+            }
 
         } catch (\Exception $e) {
-            Log::error("Proses pendaftaran gagal: " . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal mendaftar antrean. Silakan coba lagi.');
+
+            Log::warning(
+                "Email pimpinan gagal: " . $e->getMessage()
+            );
         }
+
+        // =========================================
+        // REDIRECT SUKSES
+        // =========================================
+        return redirect()->route(
+            'kunjungan.status',
+            ['kunjungan' => $kunjungan->nomor_kunjungan]
+        )->with(
+            'success',
+            'Pendaftaran antrean berhasil!'
+        );
+
+    } catch (\Exception $e) {
+
+        Log::error(
+            "Proses pendaftaran gagal: " . $e->getMessage()
+        );
+
+        return back()
+            ->withInput()
+            ->with(
+                'error',
+                'Gagal mendaftar antrean. Silakan coba lagi.'
+            );
     }
+}
 
     // Fungsi lainnya (cekStatus, formSurvey, storeSurvey) tetap sama...
    public function cekStatus(Kunjungan $kunjungan)
@@ -194,4 +262,42 @@ public function storeSurvey(Request $request)
 
     return back()->with('success', 'Terima kasih atas ulasan Anda!');
 }
+
+    // =========================================
+    // KIRIM MASSAL
+    // =========================================
+    public function kirimMassal(Request $request)
+    {
+        $ids = $request->ids;
+
+        $tujuan = $request->tujuan_pimpinan;
+
+        if (empty($ids)) {
+
+            return back()->with(
+                'error',
+                'Tidak ada data yang dipilih.'
+            );
+        }
+
+        $statusTujuan = $tujuan == 'kajur'
+            ? 'Menunggu Kajur'
+            : 'Menunggu Kaprodi';
+
+        Kunjungan::whereIn('id', $ids)->update([
+            'is_forwarded'    => 1,
+            'tujuan_pimpinan' => $tujuan,
+            'status_pimpinan' => $statusTujuan
+        ]);
+
+        return back()->with(
+            'success',
+            count($ids) .
+            ' data berhasil diteruskan ke ' .
+            ($tujuan == 'kajur'
+                ? 'Kajur'
+                : 'Kaprodi')
+        );
+    }
+
 }

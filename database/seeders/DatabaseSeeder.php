@@ -41,8 +41,6 @@ class DatabaseSeeder extends Seeder
             ['nama' => 'Teknik Listrik', 'jenis' => 'Prodi'],
             ['nama' => 'Teknologi Rekayasa Pembangkit Energi', 'jenis' => 'Prodi'],
             ['nama' => 'Teknologi Rekayasa Otomasi', 'jenis' => 'Prodi'],
-            ['nama' => 'Pimpinan Jurusan', 'jenis' => 'Prodi'],
-
         ];
 
         foreach ($prodis as $p) {
@@ -85,18 +83,31 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($list_prodi_user as $slug => $nama) {
-            // Admin Prodi (Role 2)
-            MasterUser::updateOrCreate(
-                ['email' => "admin.$slug@poliban.ac.id"],
-                ['role_id' => 2, 'name' => "Admin $nama", 'password' => $password]
-            );
 
-            // Kaprodi (Role 4)
-            MasterUser::updateOrCreate(
-                ['email' => "kaprodi.$slug@poliban.ac.id"],
-                ['role_id' => 4, 'name' => "Kaprodi $nama", 'password' => $password]
-            );
-        }
+    $prodi = MasterProdiInstansi::where('nama', $nama)->first();
+
+    // Admin Prodi (Role 2)
+    MasterUser::updateOrCreate(
+        ['email' => "admin.$slug@poliban.ac.id"],
+        [
+            'role_id'  => 2,
+            'name'     => "Admin $nama",
+            'password' => $password,
+            'prodi_id' => $prodi->id
+        ]
+    );
+
+    // Kaprodi (Role 4)
+    MasterUser::updateOrCreate(
+        ['email' => "kaprodi.$slug@poliban.ac.id"],
+        [
+            'role_id'  => 4,
+            'name'     => "Kaprodi $nama",
+            'password' => $password,
+            'prodi_id' => $prodi->id
+        ]
+    );
+}
 
         // --- 5. MENGISI DATA MASTER ASPEK & PERTANYAAN SURVEY ---
         $aspeks = [

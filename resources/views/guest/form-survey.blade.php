@@ -116,9 +116,9 @@
                     </span>
                 </button>
 
-                <a href="{{ url('/') }}" class="block text-center mt-8 text-gray-400 font-bold text-xs hover:text-indigo-500 transition-colors">
+                {{-- <a href="{{ url('/') }}" class="block text-center mt-8 text-gray-400 font-bold text-xs hover:text-indigo-500 transition-colors">
                     <i class="fa-solid fa-arrow-left mr-1"></i> Kembali ke Beranda
-                </a>
+                </a> --}}
             </div>
         </form>
     </div>

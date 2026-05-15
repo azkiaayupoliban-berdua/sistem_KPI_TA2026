@@ -4,139 +4,396 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - @yield('title')</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8FAFC; }
-        .glass-header { background: rgba(248, 250, 252, 0.8); backdrop-filter: blur(12px); }
-        .card-stat { transition: all 0.3s ease; }
-        .card-stat:hover { transform: translateY(-5px); }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+        *{
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body{
+            background: #f6f7fb;
+        }
+
+        ::-webkit-scrollbar{
+            width:6px;
+        }
+
+        ::-webkit-scrollbar-thumb{
+            background:#dbe1ea;
+            border-radius:20px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar{
+            display:none;
+        }
+
+        .sidebar-scroll{
+            -ms-overflow-style:none;
+            scrollbar-width:none;
+        }
+
+        .menu-active{
+            background: linear-gradient(90deg,#f3e8ff 0%, #ede9fe 100%);
+            color:#7c3aed;
+            font-weight:800;
+            position:relative;
+        }
+
+        .menu-active::before{
+            content:'';
+            position:absolute;
+            left:0;
+            top:14px;
+            bottom:14px;
+            width:4px;
+            border-radius:999px;
+            background:#9333ea;
+        }
+
+        .menu-hover:hover{
+            background:#f8fafc;
+            color:#0f172a;
+        }
+
+        .glass{
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(14px);
+        }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
 
-<aside class="w-72 bg-white border-r border-gray-100 flex flex-col shadow-sm z-20">
-    <div class="p-8 flex items-center gap-3">
-       <div class="w-12 h-12 flex items-center justify-center">
-    <img src="{{ asset('img/logo-poliban.png') }}" alt="Logo Poliban" class="w-full h-full object-contain">
-</div>
-        <div>
-            <h1 class="font-extrabold text-gray-800 tracking-tight text-lg leading-tight">Poliban</h1>
-            <p class="text-[10px] font-bold text-indigo-500 tracking-[0.2em] uppercase">Command Center</p>
-        </div>
+<body class="h-screen overflow-hidden">
+
+<div class="flex h-screen overflow-hidden">
+
+    {{-- MOBILE OVERLAY --}}
+    <div id="sidebarOverlay"
+        onclick="toggleSidebar()"
+        class="fixed inset-0 bg-black/40 z-40 hidden lg:hidden">
     </div>
 
-    <div class="flex-1 px-4 overflow-y-auto">
-        <nav class="space-y-2 py-4">
+    {{-- SIDEBAR --}}
+    <aside id="sidebar"
+        class="fixed lg:relative z-50 lg:z-0 top-0 left-0 h-screen w-[290px] bg-white border-r border-slate-100 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0">
 
-       {{-- MENU DASHBOARD UTAMA (Hanya Admin) --}}
-            @if(in_array(Auth::user()->role_id, [1, 2]))
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-4 px-4 py-3.5 {{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50' }} rounded-2xl font-bold transition">
-                    <i class="fa-solid fa-chart-pie text-lg"></i> Dashboard
-                </a>
-            @endif
+        {{-- LOGO --}}
+        <div class="h-24 px-6 flex items-center border-b border-slate-100">
 
-            {{-- MENU MANAJEMEN ANTREAN (Semua Role Termasuk Pimpinan Bisa Akses) --}}
-            <a href="{{ route('dashboard.antrean') }}" class="flex items-center gap-4 px-4 py-3.5 {{ request()->routeIs('dashboard.antrean') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50' }} rounded-2xl font-semibold transition">
-                <i class="fa-solid fa-users-viewfinder text-lg"></i> Manajemen Antrean
-            </a>
-    {{-- MENU ANALYTICS KPI - Muncul untuk Semua Role (Admin, Kajur, Kaprodi) --}}
-    {{-- Pastikan mengarah ke route('dashboard.analytics') --}}
-    <a href="{{ route('dashboard.analytics') }}" class="flex items-center gap-4 px-4 py-3.5 {{ request()->routeIs('dashboard.analytics') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50' }} rounded-2xl font-bold transition">
-        <i class="fa-solid fa-chart-line text-lg"></i> Analytics KPI
-    </a>
-
-    {{-- MENU UMUM --}}
-    <a href="{{ route('dashboard.ulasan') }}" class="flex items-center gap-4 px-4 py-3.5 {{ request()->routeIs('dashboard.ulasan') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50' }} rounded-2xl font-semibold transition">
-        <i class="fa-solid fa-comment-dots text-lg"></i> Ulasan Pengunjung
-    </a>
-
-    <a href="{{ route('dashboard.laporan') }}" class="flex items-center gap-4 px-4 py-3.5 {{ request()->routeIs('dashboard.laporan') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50' }} rounded-2xl font-semibold transition">
-        <i class="fa-solid fa-file-export text-lg"></i> Laporan & Ekspor
-    </a>
-
-            {{-- KHUSUS SUPER ADMIN: SISTEM CONTROL PANEL (Sesuai Desain Figma) --}}
-            @if(Auth::user()->role_id == 1)
-                <div class="pt-4 mt-4 border-t border-gray-100">
-                    <p class="px-4 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">System Admin</p>
-                    <a href="{{ route('dashboard.control_panel') }}" class="flex items-center gap-4 px-4 py-3.5 {{ request()->routeIs('dashboard.control_panel') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50' }} rounded-2xl font-bold transition">
-                        <i class="fa-solid fa-gears text-lg"></i> Sistem Control Panel
-                    </a>
-                </div>
-            @endif
-
-        </nav>
-    </div>
-</aside>
-
-<main class="flex-1 flex flex-col overflow-y-auto">
-
-    <header class="h-24 px-10 flex items-center justify-between sticky top-0 glass-header z-10 border-b border-gray-50">
-        <div class="flex items-center gap-2">
-            <span class="relative flex h-3 w-3">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-            </span>
-            <span class="text-xs font-bold text-green-600 tracking-widest uppercase">Live Monitoring</span>
-        </div>
-
-        <div class="flex items-center gap-6">
-            <div class="flex items-center gap-4 border-r border-gray-200 pr-6 text-right">
-                <div>
-                    <p class="text-sm font-bold text-gray-800">{{ $user->name }}</p>
-                    <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">
-                        @if($user->role_id == 1)
-                            Master Administrator
-                        @elseif($user->email === 'kajur.elektro@poliban.ac.id')
-                            Ketua Jurusan
-                        @elseif($user->role_id == 2)
-                            Admin Unit
-                        @else
-                            Ketua Program Studi
-                        @endif
-                    </p>
-                </div>
-                <div class="w-12 h-12 bg-indigo-600 border-4 border-indigo-50 shadow-sm rounded-2xl flex items-center justify-center text-white font-black text-sm uppercase">
-                    {{ strtoupper(substr($user->name, 0, 2)) }}
-                </div>
+            <div class="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center bg-indigo-50 shadow-sm">
+                <img src="{{ asset('img/logo-poliban.png') }}"
+                    alt="Logo"
+                    class="w-9 h-9 object-contain">
             </div>
 
-            <form action="{{ route('logout') }}" method="POST" id="logout-form">
-                @csrf
-                <button type="button" onclick="confirmLogout()" class="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-sm group">
-                    <i class="fa-solid fa-right-from-bracket text-lg group-hover:scale-110 transition-transform"></i>
-                </button>
-            </form>
-        </div>
-    </header>
+            <div class="ml-4">
+                <h1 class="font-black text-slate-900 text-sm leading-tight">
+                    Jurusan Teknik Elektro
+                </h1>
 
-    <div class="px-10 py-10">
-        @yield('content')
-    </div>
-</main>
+                <p class="text-[10px] uppercase tracking-[0.25em] text-slate-400 font-bold mt-1">
+                    Admin Panel
+                </p>
+            </div>
+
+        </div>
+
+        {{-- MENU --}}
+        <div class="flex-1 overflow-y-auto sidebar-scroll px-4 py-6">
+
+            <nav class="space-y-2">
+
+                {{-- DASHBOARD --}}
+                @if(in_array(Auth::user()->role_id, [1,2]))
+                <a href="{{ route('dashboard') }}"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                    {{ request()->routeIs('dashboard') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+
+                    <i class="fa-solid fa-chart-pie text-lg"></i>
+
+                    <span class="font-bold text-sm">
+                        Dashboard
+                    </span>
+
+                </a>
+                @endif
+
+                {{-- ANTREAN --}}
+                @if(in_array(Auth::user()->role_id, [1,2]))
+                <a href="{{ route('dashboard.antrean') }}"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                    {{ request()->routeIs('dashboard.antrean') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+
+                    <i class="fa-solid fa-users-viewfinder text-lg"></i>
+
+                    <span class="font-bold text-sm">
+                        Manajemen Antrean
+                    </span>
+
+                </a>
+                @endif
+
+                {{-- ANALYTICS --}}
+                <a href="{{ route('dashboard.analytics') }}"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                    {{ request()->routeIs('dashboard.analytics') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+
+                    <i class="fa-solid fa-chart-simple text-lg"></i>
+
+                    <span class="font-bold text-sm">
+                        Analytics KPI
+                    </span>
+
+                </a>
+
+                {{-- LAPORAN --}}
+                <a href="{{ route('dashboard.laporan') }}"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                    {{ request()->routeIs('dashboard.laporan') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+
+                    <i class="fa-solid fa-file-export text-lg"></i>
+
+                    <span class="font-bold text-sm">
+                        Laporan Ekspor
+                    </span>
+
+                </a>
+
+                {{-- ULASAN --}}
+                <a href="{{ route('dashboard.ulasan') }}"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                    {{ request()->routeIs('dashboard.ulasan') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+
+                    <i class="fa-solid fa-comment-dots text-lg"></i>
+
+                    <span class="font-bold text-sm">
+                        Ulasan Pengunjung
+                    </span>
+
+                </a>
+
+                {{-- PIMPINAN --}}
+                @if(Auth::user()->role_id != 1 && Auth::user()->role_id != 2)
+
+                <div class="pt-5 mt-5 border-t border-slate-100">
+
+                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-slate-300 font-black">
+                        Tugas Pimpinan
+                    </p>
+
+                    <a href="{{ route('pimpinan.konfirmasi') }}"
+                        class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 relative
+                        {{ request()->routeIs('pimpinan.konfirmasi') ? 'bg-amber-50 text-amber-600 font-black' : 'menu-hover text-slate-400' }}">
+
+                        <i class="fa-solid fa-file-signature text-lg"></i>
+
+                        <span class="font-bold text-sm">
+                            Konfirmasi Masuk
+                        </span>
+
+                        <span class="absolute right-5 w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+
+                    </a>
+
+                </div>
+
+                @endif
+
+                {{-- SUPER ADMIN --}}
+                @if(Auth::user()->role_id == 1)
+
+                <div class="pt-5 mt-5 border-t border-slate-100">
+
+                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-slate-300 font-black">
+                        System Admin
+                    </p>
+
+                    <a href="{{ route('dashboard.control_panel') }}"
+                        class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                        {{ request()->routeIs('dashboard.control_panel') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+
+                        <i class="fa-solid fa-gears text-lg"></i>
+
+                        <span class="font-bold text-sm">
+                            Sistem Control
+                        </span>
+
+                    </a>
+
+                </div>
+
+                @endif
+
+            </nav>
+
+        </div>
+
+        {{-- LOGOUT --}}
+        <div class="p-5 border-t border-slate-100">
+
+            <form action="{{ route('logout') }}"
+                method="POST"
+                id="logout-form">
+
+                @csrf
+
+                <button type="button"
+                    onclick="confirmLogout()"
+                    class="w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-rose-500 hover:bg-rose-50 transition-all">
+
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+
+                    <span class="font-bold text-sm">
+                        Keluar
+                    </span>
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </aside>
+
+    {{-- MAIN --}}
+    <main class="flex-1 overflow-y-auto">
+
+        {{-- TOPBAR --}}
+        <header class="h-24 px-4 sm:px-6 lg:px-8 border-b border-slate-100 glass sticky top-0 z-30">
+
+            <div class="h-full flex items-center justify-between">
+
+                {{-- LEFT --}}
+                <div class="flex items-center gap-4">
+
+                    {{-- MOBILE BUTTON --}}
+                    <button
+                        onclick="toggleSidebar()"
+                        class="lg:hidden w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 shadow-sm">
+
+                        <i class="fa-solid fa-bars"></i>
+
+                    </button>
+
+                    <div class="hidden sm:flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-100">
+
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+
+                        <span class="text-[11px] uppercase tracking-widest text-emerald-600 font-black">
+                            Auto-Refresh: ON
+                        </span>
+
+                    </div>
+
+                </div>
+
+                {{-- RIGHT --}}
+                <div class="flex items-center gap-4">
+
+                    {{-- NOTIF --}}
+                    <button class="relative w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm hover:bg-slate-50 transition-all">
+
+                        <i class="fa-regular fa-bell"></i>
+
+                        <span class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
+
+                    </button>
+
+                    {{-- USER --}}
+                    <div class="flex items-center gap-3">
+
+                        <div class="hidden sm:block text-right">
+
+                            <h3 class="text-sm font-black text-slate-900 leading-tight">
+                                {{ Auth::user()->name }}
+                            </h3>
+
+                            <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">
+
+                                @if(Auth::user()->role_id == 1)
+                                    Master Administrator
+                                @elseif(Auth::user()->email === 'kajur.elektro@poliban.ac.id')
+                                    Ketua Jurusan
+                                @elseif(Auth::user()->role_id == 2)
+                                    Admin Prodi
+                                @else
+                                    Ketua Program Studi
+                                @endif
+
+                            </p>
+
+                        </div>
+
+                        <div class="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center font-black shadow-lg">
+
+                            {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        {{-- CONTENT --}}
+        <div class="p-4 sm:p-6 lg:p-8">
+            @yield('content')
+        </div>
+
+    </main>
+
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
+
+    function toggleSidebar() {
+
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+
+    }
+
     function confirmLogout() {
+
         Swal.fire({
-            title: 'Keluar dari Sistem?',
-            text: "Sesi Anda akan berakhir.",
+            title: 'Keluar dari sistem?',
+            text: 'Sesi login akan diakhiri.',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#4f46e5',
+            confirmButtonColor: '#6366f1',
+            cancelButtonColor: '#e2e8f0',
             confirmButtonText: 'Ya, Logout',
             cancelButtonText: 'Batal',
-            customClass: { popup: 'rounded-[2rem]' }
+            customClass: {
+                popup: 'rounded-[2rem]'
+            }
         }).then((result) => {
-            if (result.isConfirmed) { document.getElementById('logout-form').submit(); }
-        })
+
+            if(result.isConfirmed){
+                document.getElementById('logout-form').submit();
+            }
+
+        });
+
     }
+
 </script>
+
 @stack('scripts')
+
 </body>
 </html>

@@ -26,34 +26,42 @@ class AuthController extends Controller
     /**
      * Memproses data login dari form
      */
-  public function login(Request $request)
+public function login(Request $request)
 {
     $request->validate([
-        'email' => 'required|email',
+        'email'    => 'required|email',
         'password' => 'required',
+        'role_id'  => 'required'
     ]);
 
-    $credentials = $request->only('email', 'password');
-
-    if (Auth::attempt($credentials)) {
-        $request->session()->regenerate();
+    if (Auth::attempt($request->only('email', 'password'))) {
         $user = Auth::user();
+        $selectedRole = $request->role_id;
 
-        // LOGIKA FILTER HALAMAN UTAMA
-        // Jika Admin (1) atau Super Admin (2), arahkan ke Dashboard Manajemen
-        if (in_array($user->role_id, [1, 2])) {
+        $isAuthorized = false;
+
+        if ($selectedRole === 'pimpinan') {
+            // Izinkan jika user adalah Kajur (3) atau Kaprodi (4)
+            if (in_array($user->role_id, [3, 4])) {
+                $isAuthorized = true;
+            }
+        } else {
+            // Untuk Admin (2) atau Super (1), harus tepat sama
+            if ($user->role_id == $selectedRole) {
+                $isAuthorized = true;
+            }
+        }
+
+        if ($isAuthorized) {
+            $request->session()->regenerate();
             return redirect()->intended('/dashboard');
         }
 
-        // JIKA KAPRODI / KAJUR:
-        // Jangan arahkan ke /dashboard, tapi langsung ke /analytics
-        // Ini membuat mereka seolah-olah tidak punya halaman 'Manajemen Antrean'
-        return redirect()->route('dashboard.analytics');
+        Auth::logout();
+        return back()->withErrors(['email' => 'Role tidak sesuai.'])->withInput();
     }
 
-    return back()->withErrors([
-        'email' => 'Email atau password salah.',
-    ])->onlyInput('email');
+    return back()->withErrors(['email' => 'Kredensial salah.'])->withInput();
 }
 
     /**

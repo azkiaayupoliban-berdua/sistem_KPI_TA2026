@@ -16,6 +16,13 @@
     </div>
     @endif
 
+    @if(session('error'))
+    <div class="mb-6 p-4 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl font-bold flex items-center gap-3">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        {{ session('error') }}
+    </div>
+    @endif
+
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
         <div class="lg:col-span-7 bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-50">

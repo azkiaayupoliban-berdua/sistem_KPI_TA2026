@@ -17,12 +17,17 @@
 
     <div class="max-w-5xl w-full flex flex-col md:flex-row overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200 border border-white">
 
-        <div class="md:w-5/12 relative bg-slate-900 p-12 flex flex-col justify-between text-white overflow-hidden">
-            <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
+        <div class="md:w-5/12 relative p-12 flex flex-col justify-between text-white overflow-hidden bg-cover bg-center" style="background-image: url('{{ asset('img/bg-poliban.jpg') }}');">
+            
+            <div class="absolute inset-0 bg-slate-900/80 z-0"></div>
+
+            <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-20 -mt-20 z-0"></div>
 
             <div class="relative z-10">
                 <div class="flex items-center gap-3 mb-8">
-                    <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center font-bold text-xl">IN</div>
+                    <div class="w-14 h-14 flex items-center justify-center">
+                        <img src="{{ asset('img/logo-poliban.png') }}" alt="Logo Poliban" class="w-full h-full object-contain">
+                    </div>
                     <div>
                         <h2 class="font-bold text-lg leading-tight uppercase tracking-tight">Politeknik Negeri Banjarmasin</h2>
                         <p class="text-[10px] text-indigo-300 font-medium tracking-widest uppercase">Command Center</p>
@@ -30,11 +35,11 @@
                 </div>
 
                 <h1 class="text-4xl font-extrabold leading-tight mb-4">Sistem Informasi <br> <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-rose-400 uppercase">Pelayanan Terpadu</span></h1>
-                <p class="text-slate-400 text-sm leading-relaxed max-w-xs uppercase tracking-wide">Kelola antrean, pantau KPI, dan tingkatkan kualitas layanan institusi dalam satu dasbor.</p>
+                <p class="text-slate-300 text-sm leading-relaxed max-w-xs uppercase tracking-wide">Kelola antrean, pantau KPI, dan tingkatkan kualitas layanan institusi dalam satu dasbor.</p>
             </div>
 
             <div class="relative z-10 pt-10">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Digital Gate System v2.0</p>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Digital Gate System v2.0</p>
             </div>
         </div>
 
@@ -52,43 +57,46 @@
                 <p class="text-slate-400 text-sm font-medium">Silakan masuk dengan akun sesuai peran Anda.</p>
             </div>
 
-         <form action="{{ route('login.post') }}" method="POST" class="space-y-6">
-                    @if ($errors->any())
-            <div class="bg-red-50 text-red-500 p-4 rounded-2xl mb-6 text-sm font-bold">
-                {{ $errors->first() }}
-            </div>
-        @endif
-                        @csrf
-               <div>
-    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Alamat Email</label>
-    <input type="email" name="email" placeholder="nama_email@poliban.ac.id"
-           class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none font-semibold text-slate-700"
-           value="{{ old('email') }}" required>
-</div>
+            <form action="{{ route('login.post') }}" method="POST" class="space-y-6">
+                @if ($errors->any())
+                    <div class="bg-red-50 text-red-500 p-4 rounded-2xl mb-6 text-sm font-bold">
+                        {{ $errors->first() }}
+                    </div>
+                @endif
+                @csrf
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Alamat Email</label>
+                    <input type="email" name="email" placeholder="nama_email@poliban.ac.id"
+                           class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none font-semibold text-slate-700"
+                           value="{{ old('email') }}" required>
+                </div>
                 <div>
                     <div class="flex justify-between mb-2">
                         <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</label>
                         <a href="#" class="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline">Lupa Password?</a>
                     </div>
-                    <input type="password" name="password" placeholder="••••••••" class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none font-semibold text-slate-700">
+                    <input type="password" name="password" placeholder="••••••••" class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none font-semibold text-slate-700" required>
                 </div>
-
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 uppercase">Pilih Role (Akses Sistem)</label>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Pilih Role (Akses Sistem)</label>
                     <div class="grid grid-cols-3 gap-3">
                         <div>
-                            <input type="radio" name="role" id="roleAdmin" value="admin" class="hidden role-radio" checked>
-                            <label for="roleAdmin" class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all">Admin</label>
+                            <input type="radio" name="role_selection" id="roleAdmin" value="2" class="hidden role-radio" {{ old('role_id') == '2' ? 'checked' : '' }}>
+                            <label for="roleAdmin" class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all text-center">Admin Prodi</label>
                         </div>
+
                         <div>
-                            <input type="radio" name="role" id="roleLeader" value="leader" class="hidden role-radio">
-                            <label for="roleLeader" class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all">Leader</label>
+                            <input type="radio" name="role_selection" id="roleLeader" value="leader_group" class="hidden role-radio" {{ in_array(old('role_id'), [3,4]) ? 'checked' : '' }}>
+                            <label for="roleLeader" class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all text-center">Pimpinan / Kaprodi</label>
                         </div>
+
                         <div>
-                            <input type="radio" name="role" id="roleSuper" value="super" class="hidden role-radio">
-                            <label for="roleSuper" class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all">Super</label>
+                            <input type="radio" name="role_selection" id="roleSuper" value="1" class="hidden role-radio" {{ old('role_id') == '1' ? 'checked' : '' }}>
+                            <label for="roleSuper" class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all text-center">Super Admin</label>
                         </div>
                     </div>
+                    
+                    <input type="hidden" name="role_id" id="real_role_id" value="{{ old('role_id', '2') }}">
                 </div>
 
                 <button type="submit" class="w-full gradient-btn text-white py-5 rounded-[1.5rem] font-extrabold text-sm uppercase tracking-widest shadow-lg shadow-indigo-200 hover:opacity-90 transition-all active:scale-95">
@@ -97,6 +105,21 @@
             </form>
         </div>
     </div>
+
+    <script>
+    // Script untuk memetakan pilihan ke role_id yang benar
+    document.querySelectorAll('input[name="role_selection"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const hiddenInput = document.getElementById('real_role_id');
+            if (this.value === 'leader_group') {
+                // Kita beri penanda khusus jika memilih grup pimpinan
+                hiddenInput.value = 'pimpinan'; 
+            } else {
+                hiddenInput.value = this.value;
+            }
+        });
+    });
+</script>
 
 </body>
 </html>

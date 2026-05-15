@@ -100,29 +100,68 @@
                 </div>
                 <div class="text-right">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Waktu Terbit</p>
-                    <p class="text-sm font-bold text-slate-700">{{ $kunjungan->created_at->format('H:i') }} WIB</p>
+                    <p class="text-sm font-bold text-slate-700">{{ $kunjungan->created_at->format('H:i') }} WITA</p>
                 </div>
+            </div>
+            {{-- KEPERLUAN --}}
+            <div class="p-6 border-b border-slate-100 bg-white">
+
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+
+                    <p class="text-[10px] uppercase font-black tracking-widest text-indigo-500 mb-4">
+                        Keperluan
+                    </p>
+
+                    {{-- JENIS KEPERLUAN --}}
+                    <div class="mb-4">
+                        <p class="text-[9px] uppercase font-black text-slate-400 tracking-widest mb-1">
+                            Jenis
+                        </p>
+
+                        <p class="text-sm font-bold text-slate-700 italic leading-relaxed">
+                            {{ $kunjungan->keperluan_master->keterangan ?? '-' }}
+                        </p>
+                    </div>
+
+                    {{-- DETAIL KEPERLUAN --}}
+                    @if(!empty($kunjungan->keperluan))
+                    <div>
+                        <p class="text-[9px] uppercase font-black text-slate-400 tracking-widest mb-1">
+                            Detail
+                        </p>
+
+                        <p class="text-sm font-medium text-slate-600 leading-relaxed italic">
+                            "{{ $kunjungan->keperluan }}"
+                        </p>
+                    </div>
+                    @endif
+
+                </div>
+
             </div>
         </div>
 
-      {{-- TANGGAPAN PIMPINAN (Hanya muncul jika sudah SELESAI/DITOLAK dan status pimpinan bukan Menunggu) --}}
-@if(in_array($kunjungan->status_layanan, ['Selesai', 'Ditolak']) && $kunjungan->status_pimpinan != 'Menunggu')
+{{-- TANGGAPAN PIMPINAN (Muncul jika pimpinan sudah memberikan catatan, tanpa menunggu status Selesai) --}}
+@if($kunjungan->catatan_pimpinan)
 <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
     <div class="flex items-center gap-2 mb-6">
-        <div class="w-2 h-5 {{ $kunjungan->status_pimpinan == 'Disetujui' ? 'bg-emerald-500' : 'bg-rose-500' }} rounded-full"></div>
-        <h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Tanggapan Pimpinan</h2>
+        <div class="w-2 h-5 bg-indigo-500 rounded-full"></div>
+        <h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Pesan dari Pimpinan</h2>
     </div>
 
-    <div class="p-5 rounded-3xl {{ $kunjungan->status_pimpinan == 'Disetujui' ? 'bg-emerald-50 border border-emerald-100' : 'bg-rose-50 border border-rose-100' }}">
-        <div class="flex items-center gap-3 mb-3">
-            <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter {{ $kunjungan->status_pimpinan == 'Disetujui' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white' }}">
-                {{ $kunjungan->status_pimpinan }}
-            </span>
-        </div>
+    {{-- Gunakan warna netral/indigo jika belum selesai, atau emerald/rose jika sudah ada keputusan final --}}
+    <div class="p-5 rounded-3xl bg-indigo-50 border border-indigo-100">
+        @if($kunjungan->status_pimpinan && $kunjungan->status_pimpinan != 'Menunggu')
+            <div class="flex items-center gap-3 mb-3">
+                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter bg-indigo-600 text-white">
+                    {{ $kunjungan->status_pimpinan }}
+                </span>
+            </div>
+        @endif
 
         <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Catatan Pimpinan:</p>
         <p class="text-sm font-bold text-slate-700 italic">
-            "{{ $kunjungan->catatan_pimpinan ?? 'Tidak ada catatan khusus.' }}"
+            "{{ $kunjungan->catatan_pimpinan }}"
         </p>
     </div>
 </div>
@@ -134,6 +173,22 @@
                 <div class="w-2 h-5 bg-indigo-600 rounded-full"></div>
                 <h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Riwayat Status</h2>
             </div>
+                    {{-- kalau kamu pakai alasan_tolak --}}
+        @if($kunjungan->alasan_tolak)
+        <div class="mt-4 relative bg-white/80 border border-rose-200 rounded-2xl p-4 shadow-sm overflow-hidden">
+
+            <div class="absolute -top-6 -right-6 w-16 h-16 bg-rose-100 rounded-full blur-xl"></div>
+
+            <p class="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-2">
+                Alasan Penolakan
+            </p>
+
+            <p class="text-sm text-rose-700 font-medium leading-relaxed">
+                {{ $kunjungan->alasan_tolak }}
+            </p>
+
+        </div>
+        @endif
 
             <div class="relative space-y-10">
                 <div class="timeline-line"></div>
@@ -148,7 +203,7 @@
                     </div>
                     <h4 class="text-sm font-bold {{ $kunjungan->status_layanan == 'Selesai' ? 'text-slate-900' : 'text-slate-300' }}">Layanan Selesai</h4>
                     <p class="text-[11px] font-medium text-slate-400">
-                        {{ $kunjungan->status_layanan == 'Selesai' ? 'Tuntas pada ' . ($kunjungan->waktu_selesai_layanan ? Carbon\Carbon::parse($kunjungan->waktu_selesai_layanan)->format('H:i') : $kunjungan->updated_at->format('H:i')) . ' WIB' : 'Menunggu penyelesaian' }}
+                        {{ $kunjungan->status_layanan == 'Selesai' ? 'Tuntas pada ' . ($kunjungan->waktu_selesai_layanan ? Carbon\Carbon::parse($kunjungan->waktu_selesai_layanan)->format('H:i') : $kunjungan->updated_at->format('H:i')) . ' WITA' : 'Menunggu penyelesaian' }}
                     </p>
                 </div>
 
@@ -172,36 +227,122 @@
                         <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
                     </div>
                     <h4 class="text-sm font-bold text-slate-900">Tiket Terdaftar</h4>
-                    <p class="text-[11px] font-medium text-amber-600 font-bold">Pukul {{ $kunjungan->created_at->format('H:i') }} WIB</p>
+                    <p class="text-[11px] font-medium text-amber-600 font-bold">Pukul {{ $kunjungan->created_at->format('H:i') }} WITA</p>
                 </div>
             </div>
         </div>
 
-       {{-- AKSI --}}
+{{-- AKSI --}}
 <div class="pt-2 space-y-4">
-    @if($kunjungan->status_layanan == 'Selesai')
 
-        {{-- KONDISI: Jika BELUM ADA data di tabel surveys untuk kunjungan ini --}}
+    {{-- ========================= --}}
+    {{-- SAAT STATUS MASIH ANTRE --}}
+    {{-- ========================= --}}
+    @if($kunjungan->status_layanan == 'Antre')
+
+        <a href="{{ url('/') }}"
+           class="w-full flex items-center justify-center py-5 bg-slate-900 text-white font-extrabold rounded-[2rem] shadow-xl hover:bg-black transition-all gap-3">
+
+            <i class="fa-solid fa-house"></i>
+            <span>Kembali ke Beranda</span>
+        </a>
+
+    {{-- ========================= --}}
+    {{-- SAAT DIPROSES --}}
+    {{-- ========================= --}}
+    @elseif($kunjungan->status_layanan == 'Diproses')
+
+        {{-- TOMBOL DIHILANGKAN --}}
+        <div class="w-full flex items-center justify-center py-5 bg-indigo-50 text-indigo-600 rounded-[2rem] border border-indigo-100">
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z">
+                    </path>
+                </svg>
+
+                <span class="font-black uppercase tracking-widest text-xs">
+                    Layanan Sedang Diproses
+                </span>
+            </div>
+        </div>
+
+        {{-- ========================= --}}
+{{-- SAAT DITOLAK --}}
+{{-- ========================= --}}
+@elseif($kunjungan->status_layanan == 'Ditolak')
+
+    <div class="bg-rose-50 border border-rose-200 rounded-[2rem] p-5 text-center">
+
+        <p class="text-rose-700 font-black text-sm uppercase tracking-wide">
+            Permohonan Ditolak
+        </p>
+
+        <p class="text-[12px] text-rose-600 mt-2 leading-relaxed">
+            Mohon periksa kembali persyaratan atau hubungi petugas.
+        </p>
+
+    </div>
+
+    <a href="{{ url('/') }}"
+       class="w-full flex items-center justify-center py-5 bg-slate-900 text-white font-extrabold rounded-[2rem] shadow-xl hover:bg-black transition-all gap-3">
+
+        <i class="fa-solid fa-house"></i>
+        <span>Kembali ke Beranda</span>
+    </a>
+
+
+    {{-- ========================= --}}
+    {{-- SAAT SELESAI --}}
+    {{-- ========================= --}}
+    @elseif($kunjungan->status_layanan == 'Selesai')
+
+        {{-- BELUM ISI SURVEY --}}
         @if(!$kunjungan->survey)
+
+            <div class="bg-amber-50 border border-amber-200 rounded-[2rem] p-5 text-center">
+                <p class="text-amber-700 font-black text-sm uppercase tracking-wide">
+                    Survei Layanan Wajib Diisi
+                </p>
+
+                <p class="text-[12px] text-amber-600 mt-2 leading-relaxed">
+                    Silakan isi survei terlebih dahulu sebelum meninggalkan halaman ini.
+                </p>
+            </div>
+
             <a href="{{ route('survey.form', $kunjungan->nomor_kunjungan) }}"
-               class="w-full flex items-center justify-center py-5 bg-indigo-600 text-white font-extrabold rounded-[2rem] shadow-xl hover:bg-indigo-700 transition-all active:scale-95">
-                Beri Ulasan Layanan ⭐
+               class="w-full flex items-center justify-center py-5 bg-indigo-600 text-white font-extrabold rounded-[2rem] shadow-xl hover:bg-indigo-700 transition-all active:scale-95 gap-3">
+
+                <i class="fa-solid fa-star"></i>
+                <span>Isi Survei Layanan</span>
             </a>
 
-        {{-- KONDISI: Jika SUDAH ADA data di tabel surveys --}}
+        {{-- SUDAH ISI SURVEY --}}
         @else
+
             <div class="w-full flex items-center justify-center py-4 bg-emerald-100 text-emerald-700 font-bold rounded-[2rem] border border-emerald-200 text-sm">
-                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                Ulasan telah diisi. Terima kasih!
+                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd">
+                    </path>
+                </svg>
+
+                Ulasan berhasil dikirim. Terima kasih!
             </div>
+
+            <a href="{{ url('/') }}"
+               class="w-full flex items-center justify-center py-5 bg-slate-900 text-white font-extrabold rounded-[2rem] shadow-xl hover:bg-black transition-all gap-3">
+
+                <i class="fa-solid fa-house"></i>
+                <span>Kembali ke Beranda</span>
+            </a>
+
         @endif
 
     @endif
 
-    <a href="{{ url('/') }}" class="w-full flex items-center justify-center py-5 bg-slate-900 text-white font-extrabold rounded-[2rem] shadow-xl hover:bg-black transition-all gap-3">
-        <i class="fa-solid fa-house"></i>
-        <span>Kembali ke Beranda</span>
-    </a>
 </div>
 
         <p class="text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.6em]">Digital Gate System</p>

@@ -1,38 +1,52 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\KunjunganController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\KunjunganController;
+use App\Http\Controllers\PimpinanKonfirmasiController;
+// Import Middleware Manual yang dibuat
+use App\Http\Middleware\CekSessionLogin;
 
 /*
 |--------------------------------------------------------------------------
 | 1. BAGIAN PENGUNJUNG (Public)
 |--------------------------------------------------------------------------
 */
-Route::get('/', [KunjunganController::class, 'create'])->name('landing');
-Route::post('/kunjungan', [KunjunganController::class, 'store'])->name('kunjungan.store');
-Route::get('/status/{kunjungan}', [KunjunganController::class, 'cekStatus'])->name('kunjungan.status');
-Route::get('/survei/{id}', [KunjunganController::class, 'formSurvey'])->name('survey.form');
-Route::post('/survei/simpan', [KunjunganController::class, 'storeSurvey'])->name('survey.store');
+Route::get('/', 'App\Http\Controllers\KunjunganController@create')->name('landing');
+Route::post('/kunjungan', 'App\Http\Controllers\KunjunganController@store')->name('kunjungan.store');
+
+// UBAH: {kunjungan} menjadi parameter biasa {id} agar Laravel tidak mencari ke MySQL
+Route::get('/status/{id}', 'App\Http\Controllers\KunjunganController@cekStatus')->name('kunjungan.status');
+Route::get('/survei/{id}', 'App\Http\Controllers\KunjunganController@formSurvey')->name('survey.form');
+Route::post('/survei/simpan', 'App\Http\Controllers\KunjunganController@storeSurvey')->name('survey.store');
 
 /*
 |--------------------------------------------------------------------------
 | 2. BAGIAN AUTHENTICATION
 |--------------------------------------------------------------------------
 */
+// UBAH: Hapus middleware 'guest' karena pengecekan session lama sudah 
+// dilakukan langsung di dalam AuthController@showLogin
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::middleware('guest')->group(function () {
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-});
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+
 
 /*
 |--------------------------------------------------------------------------
 | 3. BAGIAN DASHBOARD (Wajib Login)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->group(function () {
+// UBAH: Hapus middleware 'auth' bawaan Laravel dan panggil middleware session manual kita
+Route::middleware([CekSessionLogin::class])->group(function () {
+    
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::post('/dashboard/antrean/kirim-massal', 'App\Http\Controllers\KunjunganController@kirimMassal')->name('kunjungan.kirim-massal');
+    
+    // Halaman Khusus Pimpinan
+    Route::get('/dashboard/pimpinan/konfirmasi', [PimpinanKonfirmasiController::class, 'index'])->name('pimpinan.konfirmasi');
+    Route::post('/dashboard/pimpinan/konfirmasi/{id}/tanggapan', [PimpinanKonfirmasiController::class, 'tanggapan'])->name('pimpinan.tanggapan');
 
     /**
      * ROUTE UTAMA
@@ -50,16 +64,16 @@ Route::middleware('auth')->group(function () {
      * HALAMAN OPERASIONAL (Admin & Super Admin)
      */
     Route::get('/dashboard/manajemen-antrean', [DashboardController::class, 'manajemenAntrean'])->name('dashboard.antrean');
-    Route::post('/dashboard/mulai-proses/{kunjungan}', [DashboardController::class, 'mulaiProses'])->name('kunjungan.mulaiProses');
-    Route::post('/dashboard/tolak/{kunjungan}', [DashboardController::class, 'tolak'])->name('kunjungan.tolak');
     
-    // KOREKSI: Gunakan parameter {kunjungan} agar konsisten dengan Route Model Binding Anda
-    Route::post('/dashboard/antrean/{kunjungan}/selesai', [DashboardController::class, 'selesai'])->name('kunjungan.selesai');
+    // UBAH: Binding parameter disesuaikan dengan isi Controller
+    Route::post('/dashboard/mulai-proses/{nomor_kunjungan}', [DashboardController::class, 'mulaiProses'])->name('kunjungan.mulaiProses');
+    Route::post('/dashboard/tolak/{id}', [DashboardController::class, 'tolak'])->name('kunjungan.tolak');
+    Route::post('/dashboard/antrean/{id}/selesai', [DashboardController::class, 'selesai'])->name('kunjungan.selesai');
 
     /**
      * SISTEM TANGGAPAN & EMAIL
      */
-    Route::post('/dashboard/antrean/{kunjungan}/tanggapan', [DashboardController::class, 'tanggapanPimpinan'])->name('kunjungan.tanggapan');
+    Route::post('/dashboard/antrean/{id}/tanggapan', [DashboardController::class, 'tanggapanPimpinan'])->name('kunjungan.tanggapan');
     Route::post('/dashboard/kirim-email', [DashboardController::class, 'kirimEmailPimpinan'])->name('kunjungan.kirim-email');
 
     /**
