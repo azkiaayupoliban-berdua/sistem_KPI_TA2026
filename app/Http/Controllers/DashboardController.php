@@ -2,219 +2,781 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
-use App\Models\Kunjungan;
-use App\Models\User; // Ditambahkan agar storeUser tidak error
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Hash; // Ditambahkan untuk Bcrypt password
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Mail\NotifikasiPimpinanMail;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Session;
 
 class DashboardController extends Controller
 {
-    /**
-     * Helper Private Method untuk Filter Akses
-     */
-private function applyAccessFilter($query, $user)
-{
-    // Role 1 (Super) & Role 3 (Kajur) bisa melihat semua data (Global)
-    if ($user->role_id == 1 || $user->role_id == 3) {
-        return $query;
-    }
-
-    // Role 2 (Admin Prodi) & Role 4 (Kaprodi) hanya melihat data prodi mereka
-    if (in_array($user->role_id, [2, 4])) {
-        if ($user->prodi_id) {
-            return $query->where('prodi_id', $user->prodi_id);
-        }
-    }
-
-    // Default: Tidak ada data jika prodi_id kosong
-    return $query->whereRaw('1 = 0');
-}
-
-public function index()
+    // =========================================================================
+    // HELPER SPREADSHEET API & DATA PROCESSING
+    // =========================================================================
+    
+    private function getApiUrl()
     {
-        $user = Auth::user();
-
-        if (!in_array($user->role_id, [1, 2])) {
-            return $this->analytics();
-        }
-
-        $query = Kunjungan::with(['pengunjung', 'prodi', 'keperluan_master'])->latest();
-        $query = $this->applyAccessFilter($query, $user);
-
-        $isGlobal = ($user->role_id == 1 || $user->email === 'kajur.elektro@poliban.ac.id');
-
-        // --- 1. MENGHITUNG TOTAL KUNJUNGAN ---
-        $totalKunjungan = (clone $query)->count();
-
-        // --- 2. MENGHITUNG EFEKTIVITAS (SLA) ---
-        $querySelesai = (clone $query)->where('status_layanan', 'Selesai');
-        $totalSelesai = $querySelesai->count();
-        $totalSkorPelayanan = $querySelesai->sum('skor_pelayanan');
-        
-        $efektivitas = 0;
-        if ($totalSelesai > 0) {
-            $efektivitas = round(($totalSkorPelayanan / $totalSelesai) * 100);
-        }
-        $efektivitas = max(0, min(100, $efektivitas));
-
-        // --- 3. MENGHITUNG KUALITAS RATING (SURVEI BINTANG) ---
-        $dataSurvey = (clone $query)->whereHas('survey.detail')->with('survey.detail')->get();
-        $totalBintang = 0;
-        $jumlahResponden = $dataSurvey->count();
-
-        foreach ($dataSurvey as $k) {
-            $detail = $k->survey->detail;
-            // Menjumlahkan jawaban P1 sampai P5 (Maksimal 25 per pengunjung)
-            $totalBintang += ($detail->p1 + $detail->p2 + $detail->p3 + $detail->p4 + $detail->p5);
-        }
-
-        $kualitasRating = '-'; // Default jika belum ada pengunjung yang mengisi survei
-        if ($jumlahResponden > 0) {
-            // Karena ada 5 pertanyaan, kita bagi total responden dikali 5
-            $rataRata = $totalBintang / ($jumlahResponden * 5);
-            // Format agar tampilannya jadi 1 angka di belakang koma (contoh: 4.8)
-            $kualitasRating = number_format(round($rataRata, 1), 1); 
-        }
-
-        return view('dashboard.index', [
-            'user' => $user,
-            'isGlobal' => $isGlobal,
-            'judul_dashboard' => 'Dashboard Utama',
-            'data_kunjungan' => $query->get(),
-            'total_kunjungan' => $totalKunjungan,
-            'efektivitas_persen' => $efektivitas,
-            'kualitas_rating' => $kualitasRating // <-- Variabel ini ditambahkan agar baris 42 tidak error
-        ]);
+        return env('GOOGLE_SCRIPT_URL');
     }
+
+    private function readSheet($sheetName)
+    {
+        $response = Http::get($this->getApiUrl(), [
+            'action' => 'read',
+            'sheet'  => $sheetName
+        ]);
+        $data = $response->json('data') ?? [];
+        return collect(json_decode(json_encode($data), FALSE));
+    }
+
+    private function readMultipleSheets(array $sheets)
+    {
+        $url = $this->getApiUrl();
+        $responses = Http::pool(function (Pool $pool) use ($sheets, $url) {
+            $requests = [];
+            foreach ($sheets as $sheet) {
+                $requests[] = $pool->as($sheet)->get($url, ['action' => 'read', 'sheet' => $sheet]);
+            }
+            return $requests;
+        });
+
+        $result = [];
+        foreach ($sheets as $sheet) {
+            $response = $responses[$sheet];
+
+            // Cek apakah response berupa Exception (gagal koneksi) atau HTTP Error
+            if ($response instanceof \Exception || !$response->successful()) {
+                // Log error jika diperlukan (opsional)
+                // \Log::error("Gagal mengambil data sheet {$sheet}: " . $response->getMessage());
+                
+                // Gunakan array kosong agar aplikasi tidak crash
+                $data = []; 
+            } else {
+                // Jika sukses, baru panggil ->json()
+                $data = $response->json('data') ?? [];
+            }
+
+            $result[$sheet] = collect(json_decode(json_encode($data), FALSE));
+        }
+        return $result;
+    }
+
+    private function createSheet($sheetName, $data)
+    {
+        return Http::post($this->getApiUrl() . '?action=create&sheet=' . $sheetName, $data)->json();
+    }
+
+    private function updateSheet($sheetName, $id, $data)
+    {
+        $data['id'] = $id;
+        return Http::post($this->getApiUrl() . '?action=update&sheet=' . $sheetName, $data)->json();
+    }
+
+    private function deleteSheet($sheetName, $id)
+    {
+        return Http::post($this->getApiUrl() . '?action=delete&sheet=' . $sheetName, ['id' => $id])->json();
+    }
+
+    private function applyAccessFilter($collection, $user)
+    {
+        if ($user->role_id == 1 || $user->role_id == 3) {
+            return $collection;
+        }
+
+        if (in_array($user->role_id, [2, 4]) && $user->prodi_id) {
+            return $collection->where('prodi_id', $user->prodi_id)->values();
+        }
+
+        return collect([]);
+    }
+
+    // =========================================================================
+    // HELPER: MENGAMANKAN SESSION USER
+    // =========================================================================
+    private function getSessionUser()
+    {
+        $sessionUser = session('user');
+        // Pastikan memaksa session menjadi Object agar tidak error "Attempt to read property on array"
+        return $sessionUser ? (object) $sessionUser : null;
+    }
+
+
+    // =========================================================================
+    // CORE DASHBOARD CONTROLLER
+    // =========================================================================
+
+    public function index()
+{
+    // Panggil fungsi pengaman session
+    $user = $this->getSessionUser();
+
+    if (!$user) {
+        return redirect('/login');
+    }
+
+    // Jika bukan Admin / Super Admin
+    if (!in_array($user->role_id, [1, 2])) {
+        return $this->analytics();
+    }
+
+    $isGlobal =
+        ($user->role_id == 1 ||
+        $user->email === 'kajur.elektro@poliban.ac.id');
+
+    // =========================================================
+    // LOAD MULTIPLE SHEETS
+    // =========================================================
+    $db = $this->readMultipleSheets([
+        'kunjungan',
+        'pengunjung',
+        'master_prodi_instansi',
+        'master_keperluan',
+        'survey',
+        'detail_survey'
+    ]);
+
+    $user->prodi = $db['master_prodi_instansi']
+        ->firstWhere('id', $user->prodi_id);
+
+    // =========================================================
+    // DATA PRODI UNTUK FILTER DROPDOWN
+    // =========================================================
+    $daftar_prodi = $db['master_prodi_instansi']
+        ->where('jenis', 'Prodi')
+        ->values();
+
+    // =========================================================
+    // FILTER AKSES USER
+    // =========================================================
+    $kunjunganRaw = $this->applyAccessFilter(
+        $db['kunjungan'],
+        $user
+    );
+
+    // =========================================================
+    // FILTER BERDASARKAN PRODI
+    // =========================================================
+    if (request()->filled('prodi_id')) {
+        $kunjunganRaw = $kunjunganRaw
+            ->where('prodi_id', request('prodi_id'))
+            ->values();
+    }
+
+    // =========================================================
+    // MAPPING RELASI DATA
+    // =========================================================
+    $kunjunganData = $kunjunganRaw->map(function($k) use ($db) {
+
+        $k->pengunjung =
+            $db['pengunjung']
+            ->firstWhere('id', $k->pengunjung_id);
+
+        $k->prodi =
+            $db['master_prodi_instansi']
+            ->firstWhere('id', $k->prodi_id);
+
+        $k->keperluan_master =
+            $db['master_keperluan']
+            ->firstWhere('id', $k->keperluan_id);
+
+        $k->created_at =
+            Carbon::parse($k->created_at ?? now());
+
+        // =====================================================
+        // FORMAT DURASI LAYANAN
+        // =====================================================
+        $k->durasi_layanan = '-';
+
+        if (
+            !empty($k->waktu_mulai_layanan) &&
+            !empty($k->waktu_selesai_layanan)
+        ) {
+
+            $mulai =
+                Carbon::parse($k->waktu_mulai_layanan);
+
+            $selesai =
+                Carbon::parse($k->waktu_selesai_layanan);
+
+            $totalDetik =
+                $mulai->diffInSeconds($selesai);
+
+            $jam = floor($totalDetik / 3600);
+
+            $menit =
+                floor(($totalDetik % 3600) / 60);
+
+            $detik =
+                $totalDetik % 60;
+
+            if ($jam > 0) {
+
+                $k->durasi_layanan =
+                    "{$jam} Jam {$menit} Mnt";
+
+            } elseif ($menit > 0) {
+
+                $k->durasi_layanan =
+                    "{$menit} Mnt {$detik} Dtk";
+
+            } else {
+
+                $k->durasi_layanan =
+                    "{$detik} Detik";
+            }
+        }
+
+        return $k;
+
+    })->sortByDesc('created_at')->values();
+
+    // =========================================================
+    // DATA ULASAN TERBARU (PROSES TAMBAHAN)
+    // =========================================================
+    // Mengambil data ulasan dari kunjungan yang sudah di-filter di atas
+    $dataUlasan = $kunjunganData->filter(function($k) use ($db) {
+        return $db['survey']->contains('kunjungan_id', $k->id);
+    })->map(function($k) use ($db) {
+        
+        $survey = $db['survey']->firstWhere('kunjungan_id', $k->id);
+        
+        if ($survey) {
+            $survey->detail = $db['detail_survey']->firstWhere('survey_id', $survey->id);
+        }
+        
+        $k->survey = $survey;
+        return $k;
+        
+    })->values();
+
+    // =========================================================
+    // KPI KUANTITAS
+    // =========================================================
+    $totalKunjungan =
+        $kunjunganData->count();
+
+    $totalDilayani =
+        $kunjunganData
+        ->where('status_layanan', 'Selesai')
+        ->count();
+
+    $targetTamu = 10;
+
+    $skorKuantitas =
+        $targetTamu > 0
+        ? round(($totalDilayani / $targetTamu) * 100, 1)
+        : 0;
+
+    $skorKuantitas =
+        max(0, min(100, $skorKuantitas));
+
+    // =========================================================
+    // KPI EFEKTIVITAS (SLA)
+    // =========================================================
+    $jumlahTepatWaktu =
+        $kunjunganData->filter(function($item) {
+
+            return strtoupper(
+                trim($item->status_sla ?? '')
+            ) == 'TEPAT WAKTU';
+
+        })->count();
+
+    $jumlahTerlambat =
+        $kunjunganData->filter(function($item) {
+
+            return strtoupper(
+                trim($item->status_sla ?? '')
+            ) == 'TERLAMBAT';
+
+        })->count();
+
+    $jumlahDitolak =
+        $kunjunganData->filter(function($item) {
+
+            return strtoupper(
+                trim($item->status_layanan ?? '')
+            ) == 'DITOLAK';
+
+        })->count();
+
+    $nilaiEfektivitas =
+        ($jumlahTepatWaktu * 1) +
+        ($jumlahTerlambat * 0.5) +
+        ($jumlahDitolak * 0);
+
+    $efektivitas =
+        $totalKunjungan > 0
+        ? round(
+            ($nilaiEfektivitas / $totalKunjungan) * 100,
+            1
+        )
+        : 0;
+
+    $efektivitas =
+        max(0, min(100, $efektivitas));
+
+    // =========================================================
+    // PERSENTASE PENOLAKAN
+    // =========================================================
+    $persentasePenolakan =
+        $totalKunjungan > 0
+        ? round(
+            ($jumlahDitolak / $totalKunjungan) * 100,
+            1
+        )
+        : 0;
+
+    // =========================================================
+    // KPI KUALITAS SURVEY
+    // =========================================================
+    $totalBintang = 0;
+    $jumlahResponden = 0;
+
+    foreach ($kunjunganData as $k) {
+
+        $surv =
+            $db['survey']
+            ->firstWhere('kunjungan_id', $k->id);
+
+        if ($surv) {
+
+            $detail =
+                $db['detail_survey']
+                ->firstWhere('survey_id', $surv->id);
+
+            if ($detail) {
+
+                $totalBintang += (
+                    $detail->p1 +
+                    $detail->p2 +
+                    $detail->p3 +
+                    $detail->p4 +
+                    $detail->p5
+                );
+
+                $jumlahResponden++;
+            }
+        }
+    }
+
+    $kualitasRating = '-';
+    $skorKualitas = 0;
+
+    if ($jumlahResponden > 0) {
+
+        $rataRata =
+            $totalBintang /
+            ($jumlahResponden * 5);
+
+        $kualitasRating =
+            number_format(round($rataRata, 1), 1);
+
+        $skorKualitas =
+            round(($rataRata / 5) * 100, 1);
+    }
+
+    // =========================================================
+    // TOTAL KPI
+    // =========================================================
+    $kpiTotal =
+        (0.20 * $skorKuantitas) +
+        (0.40 * $efektivitas) +
+        (0.40 * $skorKualitas);
+
+    $kpiTotal = round($kpiTotal, 1);
+
+    // =========================================================
+    // RETURN VIEW
+    // =========================================================
+    return view('dashboard.index', [
+
+        'user' => $user,
+        'isGlobal' => $isGlobal,
+        'judul_dashboard' => 'Dashboard Utama',
+        'data_kunjungan' => $kunjunganData,
+        'daftar_prodi' => $daftar_prodi,
+        
+        // VARIABEL BARU: Di-passing agar terbaca di dashboard utama
+        'data_ulasan' => $dataUlasan, 
+
+        // Statistik
+        'total_kunjungan' => $totalKunjungan,
+        'total_dilayani' => $totalDilayani,
+
+        'jumlah_tepat_waktu' => $jumlahTepatWaktu,
+        'jumlah_terlambat' => $jumlahTerlambat,
+        'jumlah_ditolak' => $jumlahDitolak,
+
+        // KPI
+        'skor_kuantitas' => $skorKuantitas,
+        'efektivitas_persen' => $efektivitas,
+        'kualitas_rating' => $kualitasRating,
+        'skor_kualitas' => $skorKualitas,
+        'kpi_total' => $kpiTotal,
+
+        // Tambahan
+        'persentase_penolakan' => $persentasePenolakan
+    ]);
+}
+public function cekTotal(Request $request)
+{
+    $googleScriptUrl = env('GOOGLE_SCRIPT_URL', 'https://script.google.com/macros/s/AKfycbz6QBns1Z3Sh1lhA5tgAJTOLL0sIdrTaudgNoSBitz3PrfCzH80vE36vMLkxTc10Lc1/exec');
+    
+    // Ambil input prodi_id dari request dashboard
+    $prodiId = $request->query('prodi_id', '');
+
+    // Tembak Google Apps Script dengan parameter yang sesuai dengan doGet()
+    $response = Http::get($googleScriptUrl, [
+        'action' => 'count_total',
+        'prodi'  => $prodiId // Dikirim sebagai parameter 'prodi'
+    ]);
+
+    if ($response->successful()) {
+        return response()->json($response->json());
+    }
+
+    return response()->json(['total_kunjungan' => 0], 500);
+}
 
 public function analytics()
 {
-    $user = Auth::user();
-    $query = Kunjungan::query();
-    $query = $this->applyAccessFilter($query, $user);
+    $user = $this->getSessionUser();
 
-    $dataSurvey = (clone $query)->whereHas('survey.detail')->with('survey.detail')->get();
-
-    // --- Logika Kepuasan (Tetap) ---
-    $puas = 0; $cukup = 0; $kurang = 0;
-    foreach ($dataSurvey as $kunjungan) {
-        $detail = $kunjungan->survey->detail;
-        $skorY = ($detail->p1 + $detail->p2 + $detail->p3 + $detail->p4 + $detail->p5) * 4;
-        if ($skorY >= 61) { $puas++; } 
-        elseif ($skorY >= 41) { $cukup++; } 
-        else { $kurang++; }
+    if (!$user) {
+        return redirect('/login');
     }
 
-    $totalCount = $dataSurvey->count();
-    $persentasePuas = $totalCount > 0 ? round(($puas / $totalCount) * 100) : 0;
+    $db = $this->readMultipleSheets([
+        'kunjungan',
+        'survey',
+        'detail_survey',
+        'master_keperluan',
+        'master_prodi_instansi'
+    ]);
+
+    $user->prodi = $db['master_prodi_instansi']
+        ->firstWhere('id', $user->prodi_id);
+
+    $daftar_prodi = $db['master_prodi_instansi']
+        ->where('jenis', 'Prodi')
+        ->values();
+
+    $kunjunganData = $this->applyAccessFilter(
+        $db['kunjungan'],
+        $user
+    );
+
+    // FILTER PRODI
+    if (request()->filled('prodi_id')) {
+
+        $kunjunganData = $kunjunganData
+            ->where('prodi_id', request('prodi_id'))
+            ->values();
+    }
+
+    // =========================
+    // SKOR KEPUASAN
+    // =========================
+    $sangatPuas = 0;
+    $puas = 0;
+    $kurangPuas = 0;
+    $tidakPuas = 0;
+
+    $totalCount = 0;
+
+    foreach ($kunjunganData as $k) {
+
+        $surv = $db['survey']
+            ->firstWhere('kunjungan_id', $k->id);
+
+        if ($surv) {
+
+            $detail = $db['detail_survey']
+                ->firstWhere('survey_id', $surv->id);
+
+            if ($detail) {
+
+                $skorY =
+                    (
+                        $detail->p1 +
+                        $detail->p2 +
+                        $detail->p3 +
+                        $detail->p4 +
+                        $detail->p5
+                    ) * 4;
+
+                if ($skorY >= 81) {
+
+                    $sangatPuas++;
+
+                } elseif ($skorY >= 61) {
+
+                    $puas++;
+
+                } elseif ($skorY >= 41) {
+
+                    $kurangPuas++;
+
+                } else {
+
+                    $tidakPuas++;
+                }
+
+                $totalCount++;
+            }
+        }
+    }
+
+    $totalPositif = $sangatPuas + $puas;
+
+    $persentasePuas = $totalCount > 0
+        ? round(($totalPositif / $totalCount) * 100)
+        : 0;
+
     $is_na = ($totalCount == 0);
 
-    // --- Perbaikan Query SLA ---
-    $tujuhHariLalu = Carbon::today()->subDays(6);
-    
-    // Ambil semua data dalam range 7 hari yang sudah memiliki status_sla
-    $dataSlaRaw = (clone $query)
-    ->whereDate('created_at', '>=', $tujuhHariLalu)
-    ->whereNotNull('status_sla')
-    ->select(
-        DB::raw('DATE(created_at) as tanggal'), 
-        'status_sla', 
-        DB::raw('count(*) as total')
-    )
-    ->groupBy(DB::raw('DATE(created_at)'), 'status_sla') // Perbaikan utama di sini
-    ->get();
+    // =========================
+    // GRAFIK SLA
+    // =========================
+    $tujuhHariLalu = Carbon::today()
+        ->subDays(6)
+        ->startOfDay();
 
-    $label_sla = []; 
-    $data_tepat_waktu = []; 
+    $kunjunganSla = $kunjunganData
+        ->filter(function ($k) use ($tujuhHariLalu) {
+
+            return !empty($k->status_sla)
+                && Carbon::parse($k->created_at)
+                    ->gte($tujuhHariLalu);
+        });
+
+    $label_sla = [];
+    $data_tepat_waktu = [];
     $data_terlambat = [];
 
     for ($i = 0; $i < 7; $i++) {
-        $date = Carbon::today()->subDays(6 - $i)->format('Y-m-d');
-        $label_sla[] = Carbon::parse($date)->format('d M');
 
-        // Filter dengan membandingkan format tanggal Y-m-d dan Case-Insensitive status
-        $data_tepat_waktu[] = (int) $dataSlaRaw->filter(function($item) use ($date) {
-            return Carbon::parse($item->tanggal)->format('Y-m-d') == $date 
-                   && strtoupper($item->status_sla) == 'TEPAT WAKTU';
-        })->sum('total');
+        $dateObj = Carbon::today()
+            ->subDays(6 - $i);
 
-        $data_terlambat[] = (int) $dataSlaRaw->filter(function($item) use ($date) {
-            return Carbon::parse($item->tanggal)->format('Y-m-d') == $date 
-                   && strtoupper($item->status_sla) == 'TERLAMBAT';
-        })->sum('total');
+        $dateStr = $dateObj->format('Y-m-d');
+
+        $label_sla[] = $dateObj->format('d M');
+
+        $data_tepat_waktu[] = $kunjunganSla
+            ->filter(function ($k) use ($dateStr) {
+
+                return Carbon::parse($k->created_at)
+                    ->format('Y-m-d') == $dateStr
+                    &&
+                    strtoupper($k->status_sla)
+                    == 'TEPAT WAKTU';
+            })
+            ->count();
+
+        $data_terlambat[] = $kunjunganSla
+            ->filter(function ($k) use ($dateStr) {
+
+                return Carbon::parse($k->created_at)
+                    ->format('Y-m-d') == $dateStr
+                    &&
+                    strtoupper($k->status_sla)
+                    == 'TERLAMBAT';
+            })
+            ->count();
     }
 
-    // --- Query Distribusi Keperluan ---
-    $distribusi = (clone $query)
-        ->join('master_keperluan', 'kunjungan.keperluan_id', '=', 'master_keperluan.id')
-        ->select('master_keperluan.keterangan as keperluan', DB::raw('count(*) as total'))
-        ->groupBy('master_keperluan.keterangan')->get();
+    // =========================
+    // DISTRIBUSI KEPERLUAN
+    // =========================
+    $distribusiLabel = [];
+    $distribusiData = [];
+
+    $groupedKeperluan = $kunjunganData
+        ->groupBy('keperluan_id');
+
+    foreach ($groupedKeperluan as $kep_id => $items) {
+
+        $master = $db['master_keperluan']
+            ->firstWhere('id', $kep_id);
+
+        if ($master) {
+
+            $distribusiLabel[] =
+                $master->keterangan;
+
+            $distribusiData[] =
+                $items->count();
+        }
+    }
 
     return view('dashboard.analytics', [
+
         'user' => $user,
+        'daftar_prodi' => $daftar_prodi,
+
         'is_na' => $is_na,
+
         'judul_dashboard' => 'Analytics KPI',
+
         'skor_kepuasan' => [
-            'puas' => $puas, 'cukup' => $cukup, 'kurang' => $kurang, 'persen' => $persentasePuas
+
+            'sangat_puas' => $sangatPuas,
+            'puas' => $puas,
+            'kurang_puas' => $kurangPuas,
+            'tidak_puas' => $tidakPuas,
+            'persen' => $persentasePuas
         ],
-        'distribusi_label' => $distribusi->pluck('keperluan'),
-        'distribusi_data' => $distribusi->pluck('total'),
+
+        'distribusi_label' => $distribusiLabel,
+        'distribusi_data' => $distribusiData,
+
         'label_sla' => $label_sla,
         'data_tepat_waktu' => $data_tepat_waktu,
         'data_terlambat' => $data_terlambat
     ]);
 }
 
+public function checkNotifications()
+{
+    $user=(object) session('user');
+
+    $db=$this->readMultipleSheets([
+        'kunjungan'
+    ]);
+
+    $kunjungan=collect($db['kunjungan']);
+
+    // filter prodi
+    if(
+        $user->role_id != 1 &&
+        $user->email !== 'kajur.elektro@poliban.ac.id'
+    ){
+        $kunjungan=$kunjungan->where(
+            'prodi_id',
+            $user->prodi_id
+        );
+    }
+
+    // hanya status ANTRE
+    $pending=$kunjungan->filter(function($item){
+
+        $status=strtoupper(
+            trim($item->status_layanan ?? '')
+        );
+
+        return $status==='ANTRE';
+
+    });
+
+    return response()->json([
+
+        'count'=>$pending->count(),
+
+        'has_pending'=>$pending->count()>0
+
+    ]);
+}
+
     public function laporan(Request $request)
     {
-        $user = Auth::user();
-        $query = Kunjungan::query();
-        $query = $this->applyAccessFilter($query, $user);
+        $user = $this->getSessionUser();
+        if (!$user) return redirect('/login');
+
+        $db = $this->readMultipleSheets([
+            'kunjungan',
+            'master_prodi_instansi'
+        ]);
+
+        $user->prodi = $db['master_prodi_instansi']
+            ->firstWhere('id',$user->prodi_id);
+
+        $daftar_prodi = $db['master_prodi_instansi']
+            ->where('jenis','Prodi')
+            ->values();
+        $query = $this->applyAccessFilter($db['kunjungan'], $user);
+
+        // FILTER PRODI
+        if(request()->filled('prodi_id')){
+
+            $query=$query
+                ->where('prodi_id',request('prodi_id'))
+                ->values();
+        }
 
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
         if ($startDate && $endDate) {
-            $query->whereDate('created_at', '>=', $startDate)->whereDate('created_at', '<=', $endDate);
+            $start = Carbon::parse($startDate)->startOfDay();
+            $end = Carbon::parse($endDate)->endOfDay();
+            $query = $query->filter(function($k) use ($start, $end) {
+                $date = Carbon::parse($k->created_at);
+                return $date->gte($start) && $date->lte($end);
+            });
         }
 
-        $totalSelesai = (clone $query)->where('status_layanan', 'Selesai')->count();
-        $totalKunjungan = (clone $query)->count();
-        $totalDitolak = (clone $query)->where('status_layanan', 'Ditolak')->count();
+        $totalSelesai = $query->where('status_layanan', 'Selesai')->count();
+        $totalKunjungan = $query->count();
+        $totalDitolak = $query->where('status_layanan', 'Ditolak')->count();
         $tingkatPenolakan = $totalKunjungan > 0 ? round(($totalDitolak / $totalKunjungan) * 100, 1) : 0;
 
-        $kunjunganSelesai = (clone $query)->where('status_layanan', 'Selesai')->whereNotNull('waktu_selesai_layanan')->get();
-        $totalMenit = 0;
-        foreach ($kunjunganSelesai as $k) {
-            $totalMenit += $k->created_at->diffInMinutes($k->waktu_selesai_layanan);
-        }
-        $rataRataSla = $kunjunganSelesai->count() > 0 ? round($totalMenit / $kunjunganSelesai->count()) : 0;
+        $kunjunganSelesai = $query->filter(function($k){
+            return $k->status_layanan == 'Selesai'
+                && !empty($k->waktu_mulai_layanan)
+                && !empty($k->waktu_selesai_layanan);
+        });
 
-        $grafikQuery = (clone $query)->where('status_layanan', 'Selesai');
-        if (!$startDate || !$endDate) {
-            $grafikQuery->whereBetween('waktu_selesai_layanan', [now()->startOfWeek(), now()->endOfWeek()]);
+        $totalDetik = 0;
+
+        foreach($kunjunganSelesai as $k){
+
+            $totalDetik += Carbon::parse($k->waktu_mulai_layanan)
+                ->diffInSeconds(
+                    Carbon::parse($k->waktu_selesai_layanan)
+                );
         }
 
-        $dataGrafikRaw = $grafikQuery->selectRaw('DAYOFWEEK(waktu_selesai_layanan) as hari, count(*) as total')
-            ->groupBy('hari')->get();
+        $rataDetik = $kunjunganSelesai->count() > 0
+            ? round($totalDetik / $kunjunganSelesai->count())
+            : 0;
+
+        $menit = floor($rataDetik / 60);
+
+        $detik = $rataDetik % 60;
+
+        $rataRataSla = $menit.' menit '.$detik.' detik';
 
         $grafikKinerja = ['Sen' => 0, 'Sel' => 0, 'Rab' => 0, 'Kam' => 0, 'Jum' => 0, 'Sab' => 0, 'Min' => 0];
         $hariMap = [2 => 'Sen', 3 => 'Sel', 4 => 'Rab', 5 => 'Kam', 6 => 'Jum', 7 => 'Sab', 1 => 'Min'];
 
-        foreach ($dataGrafikRaw as $data) {
-            if(isset($hariMap[$data->hari])) {
-                $grafikKinerja[$hariMap[$data->hari]] = $data->total;
+        $grafikQuery = clone $kunjunganSelesai;
+        if (!$startDate || !$endDate) {
+            $awalMinggu = now()->startOfWeek();
+            $akhirMinggu = now()->endOfWeek();
+            $grafikQuery = $grafikQuery->filter(function($k) use ($awalMinggu, $akhirMinggu) {
+                $date = Carbon::parse($k->waktu_selesai_layanan);
+                return $date->between($awalMinggu, $akhirMinggu);
+            });
+        }
+
+        foreach ($grafikQuery as $data) {
+            $hariInt = Carbon::parse($data->waktu_selesai_layanan)->dayOfWeek;
+            $hariInt = $hariInt == 0 ? 1 : $hariInt + 1;
+            if(isset($hariMap[$hariInt])) {
+                $grafikKinerja[$hariMap[$hariInt]]++;
             }
         }
 
         return view('dashboard.laporan', [
             'user' => $user,
+            'daftar_prodi'=>$daftar_prodi,
             'judul_dashboard' => 'Laporan & Ekspor',
             'totalSelesai' => $totalSelesai,
             'tingkatPenolakan' => $tingkatPenolakan,
@@ -225,202 +787,549 @@ public function analytics()
             'endDate' => $endDate
         ]);
     }
+private function exportLaporan($action, Request $request)
+{
+    $user = $this->getSessionUser();
 
-    public function manajemenAntrean(Request $request)
-    {
-        $user = Auth::user();
-        $query = Kunjungan::with(['pengunjung', 'prodi'])->latest();
-        $query = $this->applyAccessFilter($query, $user);
+    // =====================================
+    // PRODI (Sanitasi & Ambil ID Angka Saja)
+    // =====================================
+    $prodiParam = 'Semua-Prodi';
 
-        if ($request->has('search')) {
-            $query->where('nomor_kunjungan', 'LIKE', "%{$request->search}%");
+    if (in_array($user->role_id, [1, 3])) {
+        // Super Admin & Kajur bisa memilih prodi melalui dropdown filter
+        if ($request->filled('prodi_id') && $request->prodi_id !== 'Semua-Prodi') {
+            $prodiParam = $request->prodi_id; 
+        }
+    } else {
+        // Admin & Kaprodi otomatis terkunci ke ID prodi miliknya sendiri
+        $prodiParam = $user->prodi_id; 
+    }
+
+    // --- PROTEKSI TAMBAHAN: JURUS SANITASI REGEX & TEXT MAPPING ---
+    // Jika karena suatu hal parameter masih mengandung teks/emoji prodi, bersihkan di sini
+    if (!is_numeric($prodiParam) && $prodiParam !== 'Semua-Prodi') {
+        $prodiStr = (string) $prodiParam;
+        if (str_contains($prodiStr, 'Teknik Informatika')) { $prodiParam = '1'; }
+        elseif (str_contains($prodiStr, 'Sistem Informasi Kota Cerdas')) { $prodiParam = '3'; }
+        elseif (str_contains($prodiStr, 'Elektronika')) { $prodiParam = '7'; }
+        elseif (str_contains($prodiStr, 'Teknik Listrik')) { $prodiParam = '8'; }
+        elseif (str_contains($prodiStr, 'Pembangkit Energi')) { $prodiParam = '9'; }
+        elseif (str_contains($prodiStr, 'Otomasi')) { $prodiParam = '10'; }
+        else {
+            // Jika benar-benar tidak dikenali atau kosong, amankan ke ID prodi milik user login
+            $prodiParam = $user->prodi_id ?? 'Semua-Prodi';
+        }
+    }
+
+    // Pastikan variabel hanya menyisakan Angka murni atau string 'Semua-Prodi'
+    if (is_numeric($prodiParam)) {
+        $prodiParam = (string) intval($prodiParam);
+    }
+
+    // =====================================
+    // VALIDASI FILTER TANGGAL
+    // =====================================
+    if (!$request->filled('start_date') || !$request->filled('end_date')) {
+        return back()->with(
+            'error',
+            'Silakan pilih rentang tanggal terlebih dahulu.'
+        );
+    }
+
+    // Pastikan format tanggal bersih YYYY-MM-DD
+    $startDate = Carbon::parse($request->start_date)->format('Y-m-d');
+    $endDate = Carbon::parse($request->end_date)->format('Y-m-d');
+    $type = $request->get('type', 'xlsx');
+
+    // =====================================
+    // KIRIM KE APPS SCRIPT
+    // =====================================
+    $response = Http::get(
+        $this->getApiUrl(),
+        [
+            'action'     => $action,
+            'type'       => $type,
+            'prodi'      => $prodiParam, // DIJAMIN BERSIH: Mengirim '1', '3', dst, atau 'Semua-Prodi'
+            'start_date' => $startDate,
+            'end_date'   => $endDate,
+        ]
+    );
+
+    if (!$response->successful()) {
+        dd('Request gagal ke Google API', $response->status(), $response->body());
+    }
+
+    $data = $response->json();
+
+    if (!$data) {
+        dd('JSON tidak valid dari Google API. Respons asli Google:', $response->body());
+    }
+
+    if (isset($data['status']) && $data['status'] === 'error') {
+        return back()->with('error', 'Gagal Ekspor: ' . ($data['message'] ?? 'Data tidak ditemukan pada rentang tersebut.'));
+    }
+
+    if (!isset($data['url'])) {
+        dd('URL file download tidak ditemukan pada respon data JSON', $data);
+    }
+
+    return redirect()->away($data['url']);
+}
+
+// ======================================================
+// EXPORT KUNJUNGAN
+// ======================================================
+
+public function exportKunjungan(Request $request)
+{
+    return $this->exportLaporan(
+        'laporan_kunjungan',
+        $request
+    );
+}
+
+// ======================================================
+// EXPORT PENGUNJUNG
+// ======================================================
+
+public function exportPengunjung(Request $request)
+{
+    return $this->exportLaporan(
+        'laporan_pengunjung',
+        $request
+    );
+}
+
+// ======================================================
+// EXPORT KINERJA
+// ======================================================
+
+public function exportKinerja(Request $request)
+{
+    return $this->exportLaporan(
+        'laporan_kinerja',
+        $request
+    );
+}
+
+// ======================================================
+// EXPORT PENOLAKAN
+// ======================================================
+
+public function exportPenolakan(Request $request)
+{
+    return $this->exportLaporan(
+        'laporan_penolakan',
+        $request
+    );
+}
+
+// ======================================================
+// EXPORT ULASAN
+// ======================================================
+
+public function exportUlasan(Request $request)
+{
+    return $this->exportLaporan(
+        'laporan_ulasan',
+        $request
+    );
+}
+
+public function manajemenAntrean(Request $request)
+{
+    $user = $this->getSessionUser();
+    if (!$user) return redirect('/login');
+
+    $db = $this->readMultipleSheets([
+        'kunjungan',
+        'pengunjung',
+        'master_prodi_instansi',
+        'master_keperluan'
+    ]);
+
+    // Set relasi prodi ke object user agar pas di view blade (untuk user non-admin)
+    $user->prodi = $db['master_prodi_instansi']
+        ->firstWhere('id', $user->prodi_id);
+
+    // Ambil daftar prodi khusus yang bertipe 'Prodi' saja agar dropdown terisi
+    $daftar_prodi = $db['master_prodi_instansi']
+        ->where('jenis', 'Prodi')
+        ->values();
+
+    $query = $this->applyAccessFilter($db['kunjungan'], $user);
+
+    // FILTER PRODI (Sesuai dengan logika fungsi laporan Anda)
+    if (request()->filled('prodi_id')) {
+        $query = $query
+            ->where('prodi_id', request('prodi_id'))
+            ->values();
+    }
+
+    // FILTER PENCARIAN NAMA / NOMOR KUNJUNGAN
+    if ($request->has('search') && $request->search != '') {
+        $search = strtolower($request->search);
+
+        $query = $query->filter(function ($k) use ($search, $db) {
+            $pengunjung = $db['pengunjung']
+                ->firstWhere('id', $k->pengunjung_id);
+
+            return str_contains(strtolower($k->nomor_kunjungan ?? ''), $search)
+                || str_contains(strtolower($pengunjung->nama_lengkap ?? ''), $search);
+        });
+    }
+
+    // MAP DATA DAN RELASI MANUAL UNTUK TABEL ANTREAN
+    $data_kunjungan = $query->map(function ($k) use ($db) {
+
+        $k->pengunjung = $db['pengunjung']
+            ->firstWhere('id', $k->pengunjung_id);
+
+        $k->prodi = $db['master_prodi_instansi']
+            ->firstWhere('id', $k->prodi_id);
+
+        $k->keperluan_master = $db['master_keperluan']
+            ->firstWhere('id', $k->keperluan_id);
+
+        // Format tanggal menggunakan Carbon
+        $k->created_at = Carbon::parse($k->created_at ?? now());
+
+        // Hitung durasi layanan
+        $k->durasi_layanan = '-';
+        if (!empty($k->waktu_mulai_layanan) && !empty($k->waktu_selesai_layanan)) {
+            $waktuMulai = Carbon::parse($k->waktu_mulai_layanan);
+            $waktuAkhir = Carbon::parse($k->waktu_selesai_layanan);
+
+            $totalDetik = $waktuMulai->diffInSeconds($waktuAkhir);
+
+            $jam = floor($totalDetik / 3600);
+            $menit = floor(($totalDetik % 3600) / 60);
+            $detik = $totalDetik % 60;
+
+            if ($jam > 0) {
+                $k->durasi_layanan = "{$jam} Jam {$menit} Mnt";
+            } elseif ($menit > 0) {
+                $k->durasi_layanan = "{$menit} Mnt {$detik} Dtk";
+            } else {
+                $k->durasi_layanan = "{$detik} Detik";
+            }
         }
 
-        return view('dashboard.antrean', [
-            'user' => $user,
-            'data_kunjungan' => $query->get(),
-            'judul_dashboard' => 'Manajemen Antrean'
-        ]);
-    }
+        return $k;
+    })->sortByDesc('created_at')->values();
+
+    return view('dashboard.antrean', [
+        'user' => $user,
+        'daftar_prodi' => $daftar_prodi, // Sekarang data dipastikan terisi & terkirim ke view
+        'data_kunjungan' => $data_kunjungan,
+        'judul_dashboard' => 'Manajemen Antrean'
+    ]);
+}
 
     public function ulasanLayanan()
     {
-        $user = Auth::user();
-        $query = Kunjungan::with(['pengunjung', 'survey.detail', 'prodi']);
-        $query = $this->applyAccessFilter($query, $user);
+        $user = $this->getSessionUser();
 
-        return view('dashboard.ulasan', [
-            'user' => $user,
-            'data_ulasan' => $query->whereHas('survey')->latest()->get(),
-            'judul_dashboard' => 'Ulasan Pengunjung'
+        if (!$user) {
+            return redirect('/login');
+        }
+
+        $db = $this->readMultipleSheets([
+            'kunjungan',
+            'pengunjung',
+            'survey',
+            'detail_survey',
+            'master_prodi_instansi'
+        ]);
+
+        // SET PRODI USER
+        $user->prodi = $db['master_prodi_instansi']
+            ->firstWhere('id',$user->prodi_id);
+
+        // DAFTAR PRODI
+        $daftar_prodi = $db['master_prodi_instansi']
+            ->where('jenis','Prodi')
+            ->values();
+
+        // FILTER AKSES
+        $query = $this->applyAccessFilter(
+            $db['kunjungan'],
+            $user
+        );
+
+        // FILTER PRODI
+        if(request()->filled('prodi_id')){
+
+            $query = $query
+                ->where('prodi_id',request('prodi_id'))
+                ->values();
+        }
+
+        // HANYA YANG ADA SURVEY
+        $query = $query->filter(function($k) use ($db){
+
+            return $db['survey']
+                ->contains('kunjungan_id',$k->id);
+
+        });
+
+        // MAP DATA
+        $data_ulasan = $query->map(function($k) use ($db){
+
+            $k->pengunjung = $db['pengunjung']
+                ->firstWhere('id',$k->pengunjung_id);
+
+            $survey = $db['survey']
+                ->firstWhere('kunjungan_id',$k->id);
+
+            if($survey){
+
+                $survey->detail = $db['detail_survey']
+                    ->firstWhere('survey_id',$survey->id);
+            }
+
+            $k->survey = $survey;
+
+            $k->created_at = Carbon::parse(
+                $k->created_at ?? now()
+            );
+
+            return $k;
+
+        })->sortByDesc('created_at')->values();
+
+        return view('dashboard.ulasan',[
+            'user'=>$user,
+            'daftar_prodi'=>$daftar_prodi,
+            'data_ulasan'=>$data_ulasan,
+            'judul_dashboard'=>'Ulasan Pengunjung'
         ]);
     }
 
-    public function mulaiProses(Request $request, Kunjungan $kunjungan)
+    // =========================================================================
+    // AKSI PERUBAHAN DATA
+    // =========================================================================
+
+    public function mulaiProses(Request $request, $nomor_kunjungan)
     {
         $request->validate([
             'estimasi_sla' => 'required|integer|min:1',
             'satuan_sla' => 'required|in:Menit,Hari'
         ]);
 
-        $kunjungan->update([
+        $kunjungan = $this->readSheet('kunjungan')->firstWhere('nomor_kunjungan', $nomor_kunjungan);
+        if (!$kunjungan) return back()->with('error', 'Data tidak ditemukan.');
+
+        $this->updateSheet('kunjungan', $kunjungan->id, [
             'status_layanan' => 'Diproses',
             'estimasi_sla' => $request->estimasi_sla,
             'satuan_sla' => $request->satuan_sla,
-            'user_id' => Auth::id(),
+            'user_id' => $this->getSessionUser()->id ?? 0,
+            
+            // TAMBAHKAN BARIS INI UNTUK MENCATAT WAKTU MULAI LAYANAN
+            'waktu_mulai_layanan' => Carbon::now()->toDateTimeString(), 
         ]);
 
-        return back()->with('success', 'Antrean ' . $kunjungan->nomor_kunjungan . ' berhasil diproses.');
+        return back()->with('success', 'Antrean ' . $nomor_kunjungan . ' berhasil diproses.');
     }
 
-public function tolak(Request $request, $id)
-{
-    $kunjungan = Kunjungan::findOrFail($id);
-
-    $kunjungan->update([
-        'status_layanan' => 'Ditolak',
-        'alasan_tolak' => $request->alasan_tolak,
-        'user_id' => Auth::id(),
-    ]);
-
-    return back()->with('success', 'Antrean ditolak');
-}
-
-   public function selesai(Request $request, $id)
-{
-    // Ubah baris ini
-$kunjungan = Kunjungan::query() // Tambahkan query()
-    ->where('id', $id)
-    ->orWhere('nomor_kunjungan', $id)
-    ->firstOrFail();
-
-    $request->validate([
-        'file_surat' => 'nullable|mimes:pdf|max:2048',
-    ]);
-
-    $waktuSelesai = Carbon::now();
-    $estimasi = $kunjungan->estimasi_sla ?? 30;
-    $satuan = $kunjungan->satuan_sla ?? 'Menit';
-
-    $batasWaktu = $kunjungan->updated_at->copy();
-    if ($satuan == 'Hari') {
-        $batasWaktu->addDays($estimasi);
-    } else {
-        $batasWaktu->addMinutes($estimasi);
-    }
-
-    // --- LOGIKA PERHITUNGAN SKOR ---
-  $skorAwal = 1.0;
-$pengurang = 0.5;
-
-if ($waktuSelesai->greaterThan($batasWaktu)) {
-    // UBAH MENJADI KAPITAL
-    $statusSla = 'TERLAMBAT';
-
-    if ($satuan == 'Hari') {
-        $jumlahTerlambat = $waktuSelesai->diffInDays($batasWaktu);
-    } else {
-        $jumlahTerlambat = $waktuSelesai->diffInMinutes($batasWaktu);
-    }
-
-    $totalUnitTerlambat = max(1, $jumlahTerlambat);
-    $skorPelayanan = $skorAwal - ($totalUnitTerlambat * $pengurang);
-} else {
-    // UBAH MENJADI KAPITAL
-    $statusSla = 'TEPAT WAKTU';
-    $skorPelayanan = $skorAwal;
-}    // ------------------------------
-
-    $namaFile = $kunjungan->file_surat;
-    if ($request->hasFile('file_surat')) {
-        $file = $request->file('file_surat');
-        $namaFile = 'surat_' . str_replace('-', '_', $kunjungan->nomor_kunjungan) . '_' . time() . '.pdf';
-        $file->storeAs('surat', $namaFile, 'public');
-    }
-
-    // Update database (kolom skor_pelayanan akan terisi karena Model menggunakan $guarded)
-    $kunjungan->update([
-        'status_layanan' => 'Selesai',
-        'user_id' => Auth::id(),
-        'waktu_selesai_layanan' => $waktuSelesai,
-        'status_sla' => $statusSla,
-        'file_surat' => $namaFile,
-        'skor_pelayanan' => $skorPelayanan
-    ]);
-
-    return back()->with('success', 'Layanan Selesai. Skor Pelayanan: ' . $skorPelayanan);
-}
-
-public function kirimEmailPimpinan(Request $request)
-{
-    $request->validate([
-        'kunjungan_id' => 'required|exists:kunjungan,id',
-        'email_pimpinan' => 'required|email'
-    ]);
-
-    $kunjungan = Kunjungan::with(['pengunjung', 'prodi'])
-                    ->findOrFail($request->kunjungan_id);
-
-    try {
-
-        Mail::to($request->email_pimpinan)
-            ->send(new NotifikasiPimpinanMail($kunjungan));
-
-        // UPDATE STATUS EMAIL TERKIRIM
-        $kunjungan->update([
-            'is_email_sent' => 1
+    public function tolak(Request $request, $id)
+    {
+        $request->validate([
+            'alasan_tolak' => 'required|string|max:255'
         ]);
 
-        return back()->with('success', 'Email berhasil diteruskan.');
+        /*
+        =========================================================
+        STATUS DITOLAK
+        =========================================================
 
-    } catch (\Exception $e) {
+        Sesuai rumus KPI:
+        - Tepat Waktu = 1
+        - Terlambat = 0.5
+        - Ditolak = 0
 
-        return back()->with('error', 'Gagal mengirim email.');
+        Jadi langsung simpan:
+        - status_sla = DITOLAK
+        - skor_pelayanan = 0
+        =========================================================
+        */
 
+        $this->updateSheet('kunjungan', $id, [
+            'status_layanan' => 'Ditolak',
+            'status_sla' => 'DITOLAK',
+
+            'alasan_tolak' => $request->alasan_tolak,
+
+            'user_id' => $this->getSessionUser()->id ?? 0,
+
+            'waktu_selesai_layanan' => Carbon::now()->toDateTimeString(),
+
+            'skor_pelayanan' => 0
+        ]);
+
+        return back()->with(
+            'success',
+            'Antrean berhasil ditolak.'
+        );
     }
-}
+    public function uploadFile(Request $request,$id)
+    {
+        $kunjungan=$this->readSheet('kunjungan')
+            ->firstWhere('id',$id);
+        if(!$kunjungan){
+            return back()->with('error','Data tidak ditemukan');
+        }
+        $request->validate([
+            'file_surat'=>'required|mimes:pdf|max:2048'
+        ]);
+        $namaFile=$kunjungan->file_surat ?? '';
+        if($request->hasFile('file_surat')){
+            $file=$request->file('file_surat');
+            $namaFile=
+                'surat_'.
+                str_replace('-','_',$kunjungan->nomor_kunjungan).
+                '_'.
+                time().
+                '.pdf';
+            $file->storeAs('surat',$namaFile,'public');
+        }
+        $this->updateSheet('kunjungan',$kunjungan->id,[
+            // TIDAK UBAH STATUS
+            'file_surat'=>$namaFile
+        ]);
+        return back()->with(
+            'success',
+            'File berhasil diupload'
+        );
+    }
+
+    public function selesai($id)
+    {
+        $kunjungan = $this->readSheet('kunjungan')
+            ->filter(function($k) use ($id) {
+                return $k->id == $id || $k->nomor_kunjungan == $id;
+            })
+            ->first();
+
+        if (!$kunjungan) {
+            abort(404);
+        }
+
+        $waktuSelesai = Carbon::now();
+        // =========================================================
+        // HITUNG SLA
+        // =========================================================
+        $estimasi = (int) ($kunjungan->estimasi_sla ?? 30);
+        $satuan = $kunjungan->satuan_sla ?? 'Menit';
+
+        $waktuMulai = !empty($kunjungan->waktu_mulai_layanan)
+            ? Carbon::parse($kunjungan->waktu_mulai_layanan)
+            : Carbon::parse($kunjungan->created_at);
+        $batasWaktu = $waktuMulai->copy();
+        if ($satuan == 'Hari') {
+            $batasWaktu->addDays($estimasi);
+        } else {
+            $batasWaktu->addMinutes($estimasi);
+        }
+        // =========================================================
+        // STATUS SLA
+        // =========================================================
+        if ($waktuSelesai->greaterThan($batasWaktu)) {
+            $statusSla = 'TERLAMBAT';
+            $skorPelayanan = 0.5;
+        } else {
+            $statusSla = 'TEPAT WAKTU';
+            $skorPelayanan = 1;
+        }
+        // =========================================================
+        // UPDATE DATA
+        // =========================================================
+        $this->updateSheet('kunjungan', $kunjungan->id, [
+            'status_layanan' => 'Selesai',
+            'user_id' => $this->getSessionUser()->id ?? 0,
+            'waktu_selesai_layanan' =>
+                $waktuSelesai->toDateTimeString(),
+            'status_sla' => $statusSla,
+            'skor_pelayanan' => $skorPelayanan
+        ]);
+
+        return back()->with(
+            'success',
+            'Layanan selesai | SLA: ' . $statusSla
+        );
+    }
+
+    public function kirimEmailPimpinan(Request $request)
+    {
+        $request->validate([
+            'kunjungan_id' => 'required',
+            'email_pimpinan' => 'required|email'
+        ]);
+
+        $db = $this->readMultipleSheets(['kunjungan', 'pengunjung', 'master_prodi_instansi']);
+        $kunjungan = $db['kunjungan']->firstWhere('id', $request->kunjungan_id);
+        
+        if (!$kunjungan) return back()->with('error', 'Kunjungan tidak ditemukan');
+
+        $kunjungan->pengunjung = $db['pengunjung']->firstWhere('id', $kunjungan->pengunjung_id);
+        $kunjungan->prodi = $db['master_prodi_instansi']->firstWhere('id', $kunjungan->prodi_id);
+
+        try {
+            Mail::to($request->email_pimpinan)->send(new NotifikasiPimpinanMail($kunjungan));
+
+            $this->updateSheet('kunjungan', $kunjungan->id, ['is_email_sent' => 1]);
+            return back()->with('success', 'Email berhasil diteruskan.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
+        }
+    }
+
+    // =========================================================================
+    // CONTROL PANEL SETTINGS
+    // =========================================================================
 
     public function controlPanel()
     {
-        $user = Auth::user();
-        if ($user->role_id != 1) {
-            return redirect()->route('dashboard')->with('error', 'Akses Ditolak');
-        }
+        $user = $this->getSessionUser();
+        if (!$user || $user->role_id != 1) return redirect()->route('dashboard')->with('error', 'Akses Ditolak');
+
+        $db = $this->readMultipleSheets(['master_user', 'master_keperluan']);
 
         return view('dashboard.control_panel', [
             'user' => $user,
             'judul_dashboard' => 'Sistem Control Panel',
-            'data_users' => User::all(),
-            'data_keperluan' => DB::table('master_keperluan')->get()
+            'data_users' => $db['master_user'],
+            'data_keperluan' => $db['master_keperluan']
         ]);
     }
 
-public function destroyKeperluan($id)
-{
-    if (Auth::user()->role_id != 1) return abort(403);
+    public function destroyKeperluan($id)
+    {
+        $user = $this->getSessionUser();
+        if (!$user || $user->role_id != 1) return abort(403);
 
-    // 1. CEK DULU: Apakah keperluan ini sedang dipakai di tabel kunjungan?
-    $sedangDipakai = DB::table('kunjungan')->where('keperluan_id', $id)->exists();
+        $kunjungan = $this->readSheet('kunjungan');
+        $sedangDipakai = $kunjungan->contains('keperluan_id', $id);
 
-    // 2. JIKA DIPAKAI: Tolak penghapusan dan kembalikan pesan error
-    if ($sedangDipakai) {
-        return back()->with('error', 'Gagal menghapus! Pilihan keperluan ini tidak bisa dihapus karena sedang digunakan oleh riwayat/antrean pengunjung.');
+        if ($sedangDipakai) {
+            return back()->with('error', 'Gagal menghapus! Pilihan keperluan ini tidak bisa dihapus karena sedang digunakan oleh riwayat/antrean pengunjung.');
+        }
+
+        $this->deleteSheet('master_keperluan', $id);
+        return back()->with('success', 'Pilihan keperluan berhasil dihapus.');
     }
-
-    // 3. JIKA AMAN: Silakan hapus
-    DB::table('master_keperluan')->where('id', $id)->delete();
-    
-    return back()->with('success', 'Pilihan keperluan berhasil dihapus.');
-}
 
     public function storeKeperluan(Request $request)
     {
         $request->validate(['keterangan' => 'required|string|max:255']);
-        DB::table('master_keperluan')->insert([
-            'keterangan' => $request->keterangan,
-            'created_at' => now(),
-            'updated_at' => now()
+        
+        $this->createSheet('master_keperluan', [
+            'keterangan' => $request->keterangan
         ]);
+
         return back()->with('success', 'Keperluan baru berhasil ditambahkan.');
     }
 
@@ -428,12 +1337,17 @@ public function destroyKeperluan($id)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'required|email',
             'password' => 'required|min:6',
             'role_id' => 'required'
         ]);
 
-        User::create([
+        $users = $this->readSheet('master_user');
+        if ($users->contains('email', $request->email)) {
+            return back()->withErrors(['email' => 'Email ini sudah terdaftar.'])->withInput();
+        }
+
+        $this->createSheet('master_user', [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -450,15 +1364,16 @@ public function destroyKeperluan($id)
             'catatan_pimpinan' => 'nullable|string'
         ]);
 
-        // Ubah baris ini
-$kunjungan = Kunjungan::query() // Tambahkan query()
-    ->where('id', $id)
-    ->orWhere('nomor_kunjungan', $id)
-    ->firstOrFail();
+        $kunjungan = $this->readSheet('kunjungan')->filter(function($k) use ($id) {
+            return $k->id == $id || $k->nomor_kunjungan == $id;
+        })->first();
 
-        $kunjungan->status_pimpinan = $request->status_pimpinan;
-        $kunjungan->catatan_pimpinan = $request->catatan_pimpinan;
-        $kunjungan->save();
+        if (!$kunjungan) abort(404);
+
+        $this->updateSheet('kunjungan', $kunjungan->id, [
+            'status_pimpinan' => $request->status_pimpinan,
+            'catatan_pimpinan' => $request->catatan_pimpinan ?? '-'
+        ]);
 
         return back()->with('success', 'Tanggapan berhasil disimpan!');
     }

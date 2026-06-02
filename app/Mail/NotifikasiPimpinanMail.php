@@ -11,9 +11,9 @@ class NotifikasiPimpinanMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $kunjungan;
+   public $kunjungan;
 
-    public function __construct(Kunjungan $kunjungan)
+   public function __construct(object $kunjungan)
     {
         $this->kunjungan = $kunjungan;
     }

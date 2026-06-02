@@ -77,27 +77,58 @@
                     </div>
                     <input type="password" name="password" placeholder="••••••••" class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none font-semibold text-slate-700" required>
                 </div>
-                <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Pilih Role (Akses Sistem)</label>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div>
-                            <input type="radio" name="role_selection" id="roleAdmin" value="2" class="hidden role-radio" {{ old('role_id') == '2' ? 'checked' : '' }}>
-                            <label for="roleAdmin" class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all text-center">Admin Prodi</label>
-                        </div>
+<div>
+    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+        Pilih Role (Akses Sistem)
+    </label>
 
-                        <div>
-                            <input type="radio" name="role_selection" id="roleLeader" value="leader_group" class="hidden role-radio" {{ in_array(old('role_id'), [3,4]) ? 'checked' : '' }}>
-                            <label for="roleLeader" class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all text-center">Pimpinan / Kaprodi</label>
-                        </div>
+    <div class="grid grid-cols-3 gap-3">
 
-                        <div>
-                            <input type="radio" name="role_selection" id="roleSuper" value="1" class="hidden role-radio" {{ old('role_id') == '1' ? 'checked' : '' }}>
-                            <label for="roleSuper" class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all text-center">Super Admin</label>
-                        </div>
-                    </div>
-                    
-                    <input type="hidden" name="role_id" id="real_role_id" value="{{ old('role_id', '2') }}">
-                </div>
+        <div>
+            <input
+                type="radio"
+                name="role_id"
+                id="roleAdmin"
+                value="2"
+                class="hidden role-radio"
+                checked>
+
+            <label for="roleAdmin"
+                class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all text-center">
+                Admin Prodi
+            </label>
+        </div>
+
+        <div>
+            <input
+                type="radio"
+                name="role_id"
+                id="roleLeader"
+                value="pimpinan"
+                class="hidden role-radio">
+
+            <label for="roleLeader"
+                class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all text-center">
+                Pimpinan
+            </label>
+        </div>
+
+        <div>
+            <input
+                type="radio"
+                name="role_id"
+                id="roleSuper"
+                value="1"
+                class="hidden role-radio">
+
+            <label for="roleSuper"
+                class="flex items-center justify-center py-3 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 transition-all text-center">
+                Super Admin
+            </label>
+        </div>
+
+    </div>
+</div>
 
                 <button type="submit" class="w-full gradient-btn text-white py-5 rounded-[1.5rem] font-extrabold text-sm uppercase tracking-widest shadow-lg shadow-indigo-200 hover:opacity-90 transition-all active:scale-95">
                     Masuk Sistem
@@ -106,20 +137,6 @@
         </div>
     </div>
 
-    <script>
-    // Script untuk memetakan pilihan ke role_id yang benar
-    document.querySelectorAll('input[name="role_selection"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const hiddenInput = document.getElementById('real_role_id');
-            if (this.value === 'leader_group') {
-                // Kita beri penanda khusus jika memilih grup pimpinan
-                hiddenInput.value = 'pimpinan'; 
-            } else {
-                hiddenInput.value = this.value;
-            }
-        });
-    });
-</script>
 
 </body>
 </html>

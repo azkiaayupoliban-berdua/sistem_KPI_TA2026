@@ -71,6 +71,11 @@
 
 <body class="h-screen overflow-hidden">
 
+{{-- AMBIL DATA USER DARI SESSION MANUAL --}}
+@php
+    $userSession = (object) session('user');
+@endphp
+
 <div class="flex h-screen overflow-hidden">
 
     {{-- MOBILE OVERLAY --}}
@@ -110,7 +115,7 @@
             <nav class="space-y-2">
 
                 {{-- DASHBOARD --}}
-                @if(in_array(Auth::user()->role_id, [1,2]))
+                @if(in_array($userSession->role_id, [1,2]))
                 <a href="{{ route('dashboard') }}"
                     class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
                     {{ request()->routeIs('dashboard') ? 'menu-active' : 'menu-hover text-slate-400' }}">
@@ -125,7 +130,7 @@
                 @endif
 
                 {{-- ANTREAN --}}
-                @if(in_array(Auth::user()->role_id, [1,2]))
+                @if(in_array($userSession->role_id, [1,2]))
                 <a href="{{ route('dashboard.antrean') }}"
                     class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
                     {{ request()->routeIs('dashboard.antrean') ? 'menu-active' : 'menu-hover text-slate-400' }}">
@@ -179,7 +184,7 @@
                 </a>
 
                 {{-- PIMPINAN --}}
-                @if(Auth::user()->role_id != 1 && Auth::user()->role_id != 2)
+                @if($userSession->role_id != 1 && $userSession->role_id != 2)
 
                 <div class="pt-5 mt-5 border-t border-slate-100">
 
@@ -206,7 +211,7 @@
                 @endif
 
                 {{-- SUPER ADMIN --}}
-                @if(Auth::user()->role_id == 1)
+                @if($userSession->role_id == 1)
 
                 <div class="pt-5 mt-5 border-t border-slate-100">
 
@@ -297,13 +302,17 @@
                 <div class="flex items-center gap-4">
 
                     {{-- NOTIF --}}
+                    @if($userSession->role_id == 2)
                     <button class="relative w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm hover:bg-slate-50 transition-all">
-
                         <i class="fa-regular fa-bell"></i>
 
-                        <span class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
+                        <span id="notif-dot" class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full hidden animate-ping"></span>
 
+                        <span id="notif-count" class="absolute -top-1 -right-1 text-[9px] bg-rose-600 text-white px-1.5 rounded-full font-bold hidden">
+                            0
+                        </span>
                     </button>
+                    @endif
 
                     {{-- USER --}}
                     <div class="flex items-center gap-3">
@@ -311,16 +320,16 @@
                         <div class="hidden sm:block text-right">
 
                             <h3 class="text-sm font-black text-slate-900 leading-tight">
-                                {{ Auth::user()->name }}
+                                {{ $userSession->name }}
                             </h3>
 
                             <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">
 
-                                @if(Auth::user()->role_id == 1)
+                                @if($userSession->role_id == 1)
                                     Master Administrator
-                                @elseif(Auth::user()->email === 'kajur.elektro@poliban.ac.id')
+                                @elseif($userSession->email === 'kajur.elektro@poliban.ac.id')
                                     Ketua Jurusan
-                                @elseif(Auth::user()->role_id == 2)
+                                @elseif($userSession->role_id == 2)
                                     Admin Prodi
                                 @else
                                     Ketua Program Studi
@@ -332,7 +341,7 @@
 
                         <div class="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center font-black shadow-lg">
 
-                            {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+                            {{ strtoupper(substr($userSession->name, 0, 2)) }}
 
                         </div>
 
@@ -354,7 +363,116 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@if($userSession->role_id == 2)
+<script>
+const notifAudio=new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+notifAudio.preload='auto';
 
+document.addEventListener('click',function initAudio(){
+    notifAudio.play().then(()=>{
+        notifAudio.pause();
+        notifAudio.currentTime=0;
+    }).catch(err=>console.log(err));
+
+    document.removeEventListener('click',initAudio);
+});
+
+function playNotifSound(){
+    notifAudio.currentTime=0;
+
+    notifAudio.play()
+    .then(()=>console.log('Notif bunyi'))
+    .catch(err=>console.log('Audio gagal:',err));
+}
+
+let lastNotifCount=0;
+let isFirstLoad=true;
+let lastReminderTime=0;
+
+function fetchNotifications(){
+
+    fetch("{{ route('dashboard.check-notif') }}")
+    .then(response=>response.json())
+    .then(data=>{
+
+        const countBadge=document.getElementById('notif-count');
+        const notifDot=document.getElementById('notif-dot');
+
+        if(data.count>0){
+
+            countBadge.innerText=data.count;
+            countBadge.classList.remove('hidden');
+            notifDot.classList.remove('hidden');
+
+        }else{
+
+            countBadge.innerText='0';
+            countBadge.classList.add('hidden');
+            notifDot.classList.add('hidden');
+        }
+
+        // notif antrean baru
+        if(!isFirstLoad && data.count>lastNotifCount){
+
+            playNotifSound();
+
+            Swal.fire({
+                title:'Antrean Baru!',
+                text:`Ada ${data.count-lastNotifCount} antrean baru masuk.`,
+                icon:'info',
+                toast:true,
+                position:'top-end',
+                showConfirmButton:false,
+                timer:5000,
+                timerProgressBar:true
+            });
+
+            lastReminderTime=Date.now();
+        }
+
+        // reminder tiap 3 menit
+        if(
+            data.count>0 &&
+            data.has_pending===true
+        ){
+
+            const now=Date.now();
+
+            if(now-lastReminderTime>=180000){
+
+                playNotifSound();
+
+                Swal.fire({
+                    title:'Reminder Antrean',
+                    text:'Masih ada antrean yang belum diproses.',
+                    icon:'warning',
+                    toast:true,
+                    position:'top-end',
+                    showConfirmButton:false,
+                    timer:5000,
+                    timerProgressBar:true
+                });
+
+                lastReminderTime=now;
+            }
+        }
+
+        lastNotifCount=data.count;
+        isFirstLoad=false;
+    })
+    .catch(error=>{
+        console.error('Fetch notif error:',error);
+    });
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+
+    fetchNotifications();
+
+    setInterval(fetchNotifications,60000);
+});
+</script>
+@endif
 <script>
 
     function toggleSidebar() {

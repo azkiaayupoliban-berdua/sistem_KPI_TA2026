@@ -77,9 +77,37 @@
             </div>
 
             <div class="order-1 lg:order-2 bg-white p-8 lg:p-10 rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-slate-50">
-                <h2 class="text-2xl font-bold mb-2 text-slate-900">Buku Tamu Digital</h2>
-                <p class="text-sm text-slate-500 mb-8">Isi form di bawah ini untuk memulai layanan kunjungan Anda.</p>
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
 
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">
+                            Buku Tamu Digital
+                        </h2>
+
+                        <p class="text-sm text-slate-500 mt-2 leading-relaxed max-w-xl">
+                            Isi form di bawah ini untuk memulai layanan kunjungan Anda.
+                            Jika sebelumnya pernah berkunjung, Anda cukup memasukkan
+                            <span class="font-bold text-indigo-600">NIM/NIP/NIK</span>
+                            untuk mengambil data otomatis.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col items-start md:items-end gap-2">
+
+                        <button type="button"
+                            onclick="cekPengunjungLama()"
+                            class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-500 hover:opacity-90 text-white text-xs font-black rounded-2xl transition-all shadow-lg shadow-indigo-200 whitespace-nowrap">
+
+                            <i class="fa-solid fa-magnifying-glass mr-2"></i>
+                            Cek Data Sebelumnya
+                        </button>
+
+                        <span id="status-cek"
+                            class="text-xs font-bold text-slate-400"></span>
+
+                    </div>
+
+                </div>
                 @if(session('success'))
                 <div class="mb-8 bg-emerald-50 text-emerald-700 p-4 rounded-xl font-medium border border-emerald-100 flex items-center gap-3">
                     <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -101,7 +129,7 @@
                 </div>
                 @endif
 
-                <form action="{{ route('kunjungan.store') }}" method="POST" class="space-y-5">
+                <form id="formKunjungan" action="{{ route('kunjungan.store') }}" method="POST" class="space-y-5">
                     @csrf
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -111,8 +139,13 @@
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
                                 </div>
-                                <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap') }}" required class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 placeholder:text-slate-400" placeholder="Jhon Doe">
-                            </div>
+                                    <input type="text"
+                                        id="nama_lengkap"
+                                        name="nama_lengkap"
+                                        value="{{ old('nama_lengkap') }}"
+                                        required
+                                        class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 placeholder:text-slate-400"
+                                        placeholder="Jhon Doe">                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-2">NIM/NIP/NIK <span class="text-slate-400 font-normal">(Opsional)</span></label>
@@ -120,7 +153,7 @@
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 4h3a3 3 0 006 0h3a2 2 0 012 2v9a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm2.5 7a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm2.45 4a2.5 2.5 0 10-4.9 0h4.9zM12 9a1 1 0 100 2h3a1 1 0 100-2h-3zm-1 4a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>
                                 </div>
-                                <input type="text" name="identitas_no" value="{{ old('identitas_no') }}" class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 placeholder:text-slate-400" placeholder="C03...">
+                                <input type="text" id="identitas_no" name="identitas_no" value="{{ old('identitas_no') }}" class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 placeholder:text-slate-400" placeholder="C03...">
                             </div>
                         </div>
                     </div>
@@ -132,7 +165,7 @@
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" /></svg>
                                 </div>
-                                <input type="text" name="no_telepon" value="{{ old('no_telepon') }}" required class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 placeholder:text-slate-400" placeholder="0812...">
+                                <input type="text" id="no_telepon" name="no_telepon" value="{{ old('no_telepon') }}" required class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 placeholder:text-slate-400" placeholder="0812...">
                             </div>
                         </div>
                         <div>
@@ -141,7 +174,7 @@
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
                                 </div>
-                                <input type="text" name="asal_instansi" value="{{ old('asal_instansi') }}" required class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 placeholder:text-slate-400" placeholder="Mis: Poliban">
+                                <input type="text" id="asal_instansi" name="asal_instansi" value="{{ old('asal_instansi') }}" required class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 placeholder:text-slate-400" placeholder="Mis: Poliban">
                             </div>
                         </div>
                     </div>
@@ -153,7 +186,7 @@
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd" /></svg>
                                 </div>
-                                <select name="prodi_id" required class="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 appearance-none cursor-pointer">
+                                <select id="prodi_id" name="prodi_id" required class="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 appearance-none cursor-pointer">
                                     <option value="" disabled selected>Pilih Program Studi...</option>
                                     @foreach($prodi as $p)
                                         <option value="{{ $p->id }}" {{ old('prodi_id') == $p->id ? 'selected' : '' }}>{{ $p->nama }}</option>
@@ -165,36 +198,37 @@
                             </div>
                         </div>
                        <div>
-    <label class="block text-sm font-semibold text-slate-700 mb-2">Kategori Keperluan</label>
-    <div class="relative">
-        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" />
-                <path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z" />
-            </svg>
-        </div>
-        <select name="keperluan_id" required class="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 appearance-none cursor-pointer">
-            <option value="" disabled selected>Pilih Keperluan...</option>
-            @foreach($keperluan as $k)
-                <option value="{{ $k->id }}" {{ old('keperluan_id') == $k->id ? 'selected' : '' }}>
-                    {{ $k->keterangan }}
-                </option>
-            @endforeach
-        </select>
-        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-        </div>
-    </div>
-</div>                    </div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Kategori Keperluan</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" />
+                                    <path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z" />
+                                </svg>
+                            </div>
+                            <select id="keperluan_id" name="keperluan_id" required class="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 appearance-none cursor-pointer">
+                                <option value="" disabled selected>Pilih Keperluan...</option>
+                                @foreach($keperluan as $k)
+                                    <option value="{{ $k->id }}" {{ old('keperluan_id') == $k->id ? 'selected' : '' }}>
+                                        {{ $k->keterangan }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Keperluan (Detail)</label>
-                        <textarea name="catatan_keperluan" rows="3" class="w-full p-4 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 resize-none placeholder:text-slate-400" placeholder="Ceritakan singkat tujuan kedatangan Anda...">{{ old('catatan_keperluan') }}</textarea>
+                        <textarea id="catatan_keperluan" name="catatan_keperluan" rows="3" class="w-full p-4 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700 resize-none placeholder:text-slate-400" placeholder="Ceritakan singkat tujuan kedatangan Anda...">{{ old('catatan_keperluan') }}</textarea>
                     </div>
 
-                    <button type="submit" class="w-full py-4 mt-4 bg-gradient-to-r from-blue-600 via-purple-500 to-orange-400 text-white font-bold text-lg rounded-full hover:shadow-lg hover:shadow-purple-500/30 transition-all hover:-translate-y-0.5">
+                    <button type="submit" id="btnSubmit" class="w-full py-4 mt-4 bg-gradient-to-r from-blue-600 via-purple-500 to-orange-400 text-white font-bold text-lg rounded-full hover:shadow-lg hover:shadow-purple-500/30 transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none">
                         Daftar Kunjungan
                     </button>
                 </form>
@@ -266,10 +300,7 @@
         return;
     }
 
-    // Gunakan helper route() dari Laravel agar URL selalu dinamis dan benar
-    // Ini akan otomatis menghasilkan /kunjungan/NOMOR
-    const urlTujuan = "{{ route('kunjungan.status', ':nomor') }}".replace(':nomor', nomorKunjungan);
-
+    const urlTujuan = "{{ url('/status') }}/" + nomorKunjungan;
     window.location.href = urlTujuan;
 }
 
@@ -278,6 +309,62 @@
             lacakAntrean();
         }
     });
+</script>
+<script>
+async function cekPengunjungLama(){
+    const identitas=document.getElementById('identitas_no').value;
+    const status=document.getElementById('status-cek');
+
+    if(!identitas){
+        status.innerHTML='<span class="text-rose-500">Isi NIM/NIP/NIK dulu</span>';
+        return;
+    }
+
+    status.innerHTML='<span class="text-indigo-500">Mencari data...</span>';
+
+    try{
+        const response=await fetch(`/cek-pengunjung/${identitas}`);
+        const data=await response.json();
+
+        if(data.status==='found'){
+            document.getElementById('nama_lengkap').value=data.data.nama_lengkap ?? '';
+            document.getElementById('no_telepon').value=data.data.no_telepon ?? '';
+            document.getElementById('asal_instansi').value=data.data.asal_instansi ?? '';
+            status.innerHTML='<span class="text-emerald-600">Data ditemukan ✔</span>';
+        }else{
+            status.innerHTML='<span class="text-amber-500">Data tidak ditemukan</span>';
+        }
+    }catch(err){
+        status.innerHTML='<span class="text-rose-500">Gagal cek data</span>';
+    }
+}
+
+// PERBAIKAN: Fungsi pencegahan double submit yang diperkuat
+document.getElementById('formKunjungan').addEventListener('submit', function (e) {
+    const form = this;
+    const btnSubmit = document.getElementById('btnSubmit');
+    
+    // Cek jika form sudah dalam proses kirim, batalkan kiriman berikutnya
+    if (form.getAttribute('data-submitting') === 'true') {
+        e.preventDefault();
+        return false;
+    }
+    
+    // Set penanda bahwa form sedang diproses
+    form.setAttribute('data-submitting', 'true');
+    
+    // Matikan tombol agar tidak bisa diklik secara fisik
+    btnSubmit.disabled = true;
+    
+    // Ubah tampilan teks tombol menjadi spinner loading
+    btnSubmit.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Memproses Pendaftaran...
+    `;
+});
 </script>
 </body>
 </html>

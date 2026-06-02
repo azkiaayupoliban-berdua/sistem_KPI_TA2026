@@ -59,9 +59,39 @@
                 <div class="p-6 bg-emerald-50/40 border-b border-emerald-100 flex items-center justify-between">
                     <div>
                         <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Durasi Pelayanan</p>
-                        <p class="text-xl font-extrabold text-emerald-700">
-                            {{-- Menggunakan number_format untuk memastikan 2 digit di belakang koma --}}
-                            {{ number_format($kunjungan->created_at->diffInMinutes($kunjungan->waktu_selesai_layanan ?? $kunjungan->updated_at), 2) }} Menit
+                        <p class="text-lg font-extrabold text-emerald-700">
+                            @php
+                                // Waktu mulai WAJIB dari saat admin klik "Proses"
+                                $waktuMulai = $kunjungan->waktu_mulai_layanan 
+                                    ? \Carbon\Carbon::parse($kunjungan->waktu_mulai_layanan) 
+                                    : null;
+                                
+                                // Waktu akhir saat status "Selesai"
+                                $waktuAkhir = $kunjungan->waktu_selesai_layanan 
+                                    ? \Carbon\Carbon::parse($kunjungan->waktu_selesai_layanan) 
+                                    : $kunjungan->updated_at;
+                                
+                                // Cegah error jika waktu_mulai_layanan masih kosong di database lama
+                                if ($waktuMulai) {
+                                    $totalDetik = $waktuMulai->diffInSeconds($waktuAkhir);
+                                    
+                                    $jam = floor($totalDetik / 3600);
+                                    $menit = floor(($totalDetik % 3600) / 60);
+                                    $detik = $totalDetik % 60;
+                                    
+                                    if ($jam > 0) {
+                                        $durasi = "{$jam} Jam {$menit} Mnt";
+                                    } elseif ($menit > 0) {
+                                        $durasi = "{$menit} Mnt {$detik} Dtk";
+                                    } else {
+                                        $durasi = "{$detik} Detik";
+                                    }
+                                } else {
+                                    // Pesan jika data waktu_mulai_layanan di database ternyata kosong
+                                    $durasi = "Data Waktu Tidak Valid"; 
+                                }
+                            @endphp
+                            {{ $durasi }}
                         </p>
                     </div>
                     <div class="px-4 py-1.5 bg-emerald-500 text-white text-[10px] font-black rounded-full uppercase tracking-tighter shadow-sm">

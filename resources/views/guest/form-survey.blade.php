@@ -44,13 +44,17 @@
                 <i class="fa-solid fa-star text-2xl text-indigo-500"></i>
             </div>
             <h2 class="text-3xl font-black text-gray-900 tracking-tight">Beri Ulasan Layanan</h2>
-            <p class="text-gray-500 mt-2">Halo **{{ $nama_tamu }}**, masukan Anda membantu kami menjadi lebih baik.</p>
-
-            @if(isset($durasi_menit))
+<p class="text-gray-500 mt-2 leading-relaxed">
+    Halo <span class="font-bold text-gray-700">{{ $nama_tamu }}</span>,
+    masukan Anda sangat berarti bagi peningkatan layanan kami.
+    Identitas Anda tetap aman dan dapat ditampilkan secara anonim agar Anda lebih nyaman dalam memberikan kritik maupun saran.
+</p>
+            @if(isset($durasi))
                 <div class="mt-6 inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-4 py-1.5 rounded-2xl">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+
                     <span class="text-[10px] font-black text-emerald-700 uppercase tracking-wider">
-                        Selesai dalam {{ $durasi_menit }} Menit
+                        Selesai dalam {{ $durasi }}
                     </span>
                 </div>
             @endif

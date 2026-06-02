@@ -26,8 +26,12 @@
                 @php $count++; @endphp
                 <tr class="hover:bg-slate-50 transition-colors">
                     <td class="px-8 py-6">
-                        <p class="text-sm font-bold text-gray-800">{{ $item->created_at->format('H:i') }}</p>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase">{{ $item->created_at->format('d M Y') }}</p>
+                        <p class="text-sm font-bold text-gray-800">
+                            {{ \Carbon\Carbon::parse($item->created_at)->format('H:i') }}
+                        </p>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase">
+                            {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }}
+                        </p>
                     </td>
                     <td class="px-8 py-6">
 
