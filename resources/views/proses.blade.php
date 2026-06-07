@@ -292,31 +292,41 @@
                     <i class="fa-solid fa-house"></i>
                     <span>Kembali ke Beranda</span>
                 </a>
-                @elseif($kunjungan->status_layanan == 'Selesai')
-                @if(!$kunjungan->survey)
-                    <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl sm:rounded-3xl p-5 text-center">
-                        <p class="text-amber-700 dark:text-amber-400 font-black text-sm uppercase tracking-wide">Survei Layanan Wajib Diisi</p>
-                        <p class="text-[12px] text-amber-600 dark:text-amber-500 mt-2 leading-relaxed">Silakan isi survei terlebih dahulu sebelum meninggalkan halaman ini.</p>
-                    </div>
-                    <a href="{{ route('survey.form', $kunjungan->nomor_kunjungan) }}" class="w-full flex items-center justify-center py-4 bg-[#0b3a82] text-white font-extrabold rounded-2xl sm:rounded-3xl shadow-xl hover:bg-[#072a63] transition-all active:scale-95 gap-3 text-sm">
-                        <i class="fa-solid fa-star"></i>
-                        <span>Isi Survei Layanan</span>
-                    </a>
-                @else
-                    {{-- INFO SUKSES SURVEI --}}
-                    <div class="w-full flex items-center justify-center py-4 px-3 bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-bold rounded-2xl sm:rounded-3xl border border-emerald-200 dark:border-emerald-900/50 text-xs sm:text-sm text-center mb-2">
-                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span>Ulasan berhasil dikirim. Terima kasih!</span>
-                    </div>
-
-                    {{-- TOMBOL KEMBALI KE BERANDA (SELESAI ISI SURVEI) --}}
+           @elseif($kunjungan->status_layanan == 'Selesai')
+                {{-- TAMBAHKAN CEK PARAMETER URL DI SINI --}}
+                @if(request()->get('view') == 'admin')
+                    {{-- Jika Admin yang buka lewat tombol mata, langsung tampilkan tombol Beranda tanpa survey --}}
                     <a href="{{ url('/') }}" class="w-full flex items-center justify-center py-4 bg-[#0b3a82] dark:bg-slate-800 text-white font-extrabold rounded-2xl sm:rounded-3xl shadow-xl hover:bg-[#072a63] dark:hover:bg-slate-700 transition-all gap-3 text-sm">
                         <i class="fa-solid fa-house"></i>
                         <span>Kembali ke Beranda</span>
                     </a>
-                @endif
+                @else
+                    {{-- Jika Tamu/Pengunjung asli yang buka dari HP mereka --}}
+                    @if(!$kunjungan->survey)
+                        <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl sm:rounded-3xl p-5 text-center">
+                            <p class="text-amber-700 dark:text-amber-400 font-black text-sm uppercase tracking-wide">Survei Layanan Wajib Diisi</p>
+                            <p class="text-[12px] text-amber-600 dark:text-amber-500 mt-2 leading-relaxed">Silakan isi survei terlebih dahulu sebelum meninggalkan halaman ini.</p>
+                        </div>
+                        <a href="{{ route('survey.form', $kunjungan->nomor_kunjungan) }}" class="w-full flex items-center justify-center py-4 bg-[#0b3a82] text-white font-extrabold rounded-2xl sm:rounded-3xl shadow-xl hover:bg-[#072a63] transition-all active:scale-95 gap-3 text-sm">
+                            <i class="fa-solid fa-star"></i>
+                            <span>Isi Survei Layanan</span>
+                        </a>
+                    @else
+                        {{-- INFO SUKSES SURVEI --}}
+                        <div class="w-full flex items-center justify-center py-4 px-3 bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-bold rounded-2xl sm:rounded-3xl border border-emerald-200 dark:border-emerald-900/50 text-xs sm:text-sm text-center mb-2">
+                            <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>Ulasan berhasil dikirim. Terima kasih!</span>
+                        </div>
+
+                        {{-- TOMBOL KEMBALI KE BERANDA (SELESAI ISI SURVEI) --}}
+                        <a href="{{ url('/') }}" class="w-full flex items-center justify-center py-4 bg-[#0b3a82] dark:bg-slate-800 text-white font-extrabold rounded-2xl sm:rounded-3xl shadow-xl hover:bg-[#072a63] dark:hover:bg-slate-700 transition-all gap-3 text-sm">
+                            <i class="fa-solid fa-house"></i>
+                            <span>Kembali ke Beranda</span>
+                        </a>
+                    @endif
+                @endif {{-- PENUTUP CEK PARAMETER ADMIN --}}
             @endif
         </div>
 

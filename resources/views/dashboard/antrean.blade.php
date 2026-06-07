@@ -279,7 +279,7 @@
                         <td class="px-6 md:px-8 py-4 md:py-6 text-center">
                             @php $layananBelumDimulai = $k->status_layanan == 'Antre'; @endphp
                             <div class="flex justify-center gap-1.5 md:gap-2 items-center">
-                                <a href="{{ url('/status/'.$k->nomor_kunjungan) }}" target="_blank" class="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-300 rounded-lg md:rounded-xl hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-white transition-all shadow-sm">
+                                <a href="{{ url('/status/'.$k->nomor_kunjungan) }}?view=admin" target="_blank" class="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-300 rounded-lg md:rounded-xl hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-white transition-all shadow-sm">
                                     <i class="fa-solid fa-eye text-[10px] md:text-xs"></i>
                                 </a>
 
