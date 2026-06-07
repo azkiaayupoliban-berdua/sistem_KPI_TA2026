@@ -36,7 +36,7 @@
             <h2 class="text-2xl md:text-4xl font-black text-gray-800 dark:text-white tracking-tight leading-none">Manajemen Antrean</h2>
             <p class="text-slate-400 dark:text-slate-400 text-xs md:text-sm font-medium mt-2 md:mt-3">Monitor dan kelola riwayat antrean secara mendetail.</p>
         </div>
-        
+
 {{-- FORM PENCARIAN DAN FILTER --}}
 {{-- UPDATE: Menambahkan event handler onsubmit untuk memicu efek loading beku --}}
 <form action="{{ url()->current() }}" method="GET" onsubmit="handleCariLoading(event, this)" class="w-full lg:w-auto flex flex-col sm:flex-row gap-3 items-center">
@@ -51,7 +51,7 @@
             onchange="handleSelectProdiLoading(this)"
             {{ !$isSuper ? 'disabled' : '' }}
             class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-4 pr-10 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-950 outline-none appearance-none transition-all shadow-sm {{ !$isSuper ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800' : '' }}">
-            
+
             @if($isSuper)
                 <option value="" class="dark:bg-slate-800"> Seluruh Program Studi</option>
                 @foreach($daftar_prodi ?? [] as $p)
@@ -65,7 +65,7 @@
                 </option>
             @endif
         </select>
-        
+
         <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 text-xs">
             <i class="fa-solid fa-chevron-down"></i>
         </div>
@@ -74,29 +74,29 @@
     {{-- Input Pencarian Nama / Nomor Kunjungan --}}
     <div class="w-full sm:w-64 relative">
         <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"></i>
-        <input type="text" 
-            name="search" 
-            value="{{ request('search') }}" 
-            placeholder="Cari nama / no. kunjungan..." 
+        <input type="text"
+            name="search"
+            value="{{ request('search') }}"
+            placeholder="Cari nama / no. kunjungan..."
             class="w-full pl-12 pr-10 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-medium focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-950 outline-none shadow-sm transition-all text-slate-700 dark:text-slate-200">
-        
+
         @if(request('search') || request('prodi_id'))
-            <a href="{{ url()->current() }}" 
-            onclick="handleResetLoading()" 
-            class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 transition-colors" 
+            <a href="{{ url()->current() }}"
+            onclick="handleResetLoading()"
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 transition-colors"
             title="Clear Filter">
                 <i class="fa-solid fa-circle-xmark"></i>
             </a>
         @endif
     </div>
-    
+
     {{-- Tombol Submit Cari --}}
     {{-- UPDATE: Menambahkan id="btnSubmitCari", disabled styling Tailwind, dan elemen <span> pembungkus teks --}}
-    <button type="submit" id="btnSubmitCari" 
-        class="w-full sm:w-auto bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-400 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed">
-        <i class="fa-solid fa-magnifying-glass mr-2"></i>
-        <span>Cari</span>
-    </button>
+    <button type="submit" id="btnSubmitCari"
+    class="w-full sm:w-auto bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed shadow-blue-900/30">
+    <i class="fa-solid fa-magnifying-glass mr-2"></i>
+    <span>Cari</span>
+</button>
 </form>
     </div>
 
@@ -193,7 +193,7 @@
                         <td class="px-6 md:px-8 py-4 md:py-6 font-bold text-gray-800 dark:text-slate-200 text-sm md:text-base">#{{ $k->nomor_kunjungan }}</td>
                         <td class="px-6 md:px-8 py-4 md:py-6">
                             <p class="font-extrabold text-gray-800 dark:text-white text-sm md:text-base">{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}</p>
-                            
+
                             {{-- JENIS KEPERLUAN --}}
                             <div class="mb-2 mt-1">
                                 <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Jenis</p>
@@ -201,7 +201,7 @@
                                     {{ $k->keperluan_master->keterangan ?? '-' }}
                                 </p>
                             </div>
-                            
+
                             {{-- DETAIL --}}
                             @if(!empty($k->keperluan) && $k->keperluan != '-')
                                 <div class="mb-2">
@@ -520,16 +520,16 @@
     .dark .overflow-x-auto::-webkit-scrollbar-thumb {
         background-color: #334155;
     }
-    
-    @keyframes toast-in { 
-        from { transform: translateY(100px); opacity: 0; } 
-        to { transform: translateY(0); opacity: 1; } 
+
+    @keyframes toast-in {
+        from { transform: translateY(100px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
     }
     .animate-toast-in { animation: toast-in 0.5s ease forwards; }
-    
-    @keyframes modal-up { 
-        from { transform: translateY(20px); opacity: 0; } 
-        to { transform: translateY(0); opacity: 1; } 
+
+    @keyframes modal-up {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
     }
     .animate-modal-up { animation: modal-up 0.3s ease-out forwards; }
     </style>
@@ -540,7 +540,7 @@
     // ==========================================
     function showGlobalLoading(pesanText = "Sedang memproses data, mohon tunggu...") {
         const isDarkMode = document.documentElement.classList.contains('dark');
-        
+
         // Matikan fungsi penutupan modal dari klik luar area layar
         window.onclick = null;
 
@@ -649,10 +649,10 @@
     function tutupModalUpload() {
         const form = document.getElementById('formUploadSelesai');
         const btnSubmitUpload = document.getElementById('btnSubmitUpload');
-        
+
         if (form) form.reset(); // Mengosongkan kembali input file yang sudah dipilih
         if (btnSubmitUpload) btnSubmitUpload.classList.add('hidden'); // Sembunyikan tombol kembali
-        
+
         document.getElementById('modalUploadFile').classList.add('hidden');
     }
 
@@ -686,7 +686,7 @@
         const btnSubmit = document.getElementById('btnSubmitForward');
         const btnBatal = document.getElementById('btnBatalForward');
         const btnCloseX = document.getElementById('btnCloseXForward');
-        
+
         if (!form.checkValidity()) {
             form.reportValidity();
             return;
@@ -727,7 +727,7 @@
 
                 // Panggil pop-up konfirmasi loading global
                 showGlobalLoading("Sedang merujuk data kunjungan ke pimpinan...");
-                
+
                 form.submit();
             }
         });
@@ -745,7 +745,7 @@
         // Pastikan juga mengecek pop-up loading SweetAlert2 sedang aktif atau tidak
         const isSwalOpen = Swal.isVisible();
 
-        const isModalOpen = 
+        const isModalOpen =
             (modalSLA && !modalSLA.classList.contains('hidden')) ||
             (modalEmail && !modalEmail.classList.contains('hidden')) ||
             (modalForward && !modalForward.classList.contains('hidden')) ||
@@ -772,13 +772,13 @@
             showCancelButton: true,
             confirmButtonText: 'Ya, Selesai',
             cancelButtonText: 'Batal',
-            
+
             // Pengaturan warna tema mengikuti status dark mode Anda
             background: isDarkMode ? '#1e293b' : '#ffffff',
             color: isDarkMode ? '#f8fafc' : '#1f2937',
             confirmButtonColor: '#10b981',                   // bg-emerald-500 sesuai tema tombol Anda
             cancelButtonColor: isDarkMode ? '#475569' : '#94a3b8',
-            
+
             customClass: {
                 popup: 'rounded-[2rem] shadow-2xl border border-gray-100 dark:border-slate-700',
                 title: 'font-black text-xl tracking-tight',
@@ -801,7 +801,7 @@
                         didOpen: () => { Swal.showLoading(); }
                     });
                 }
-                
+
                 // Submit data form ke controller Laravel secara aman
                 form.submit();
             }
@@ -820,7 +820,7 @@ function handleCariLoading(event, formElement) {
         btnCari.disabled = true;
         const icon = btnCari.querySelector('i');
         const text = btnCari.querySelector('span');
-        
+
         if (icon) icon.className = "fa-solid fa-spinner fa-spin mr-2";
         if (text) text.innerText = "Memuat...";
     }

@@ -18,7 +18,7 @@ class DashboardController extends Controller
     // =========================================================================
     // HELPER SPREADSHEET API & DATA PROCESSING
     // =========================================================================
-    
+
     private function getApiUrl()
     {
         return env('GOOGLE_SCRIPT_URL');
@@ -53,9 +53,9 @@ class DashboardController extends Controller
             if ($response instanceof \Exception || !$response->successful()) {
                 // Log error jika diperlukan (opsional)
                 // \Log::error("Gagal mengambil data sheet {$sheet}: " . $response->getMessage());
-                
+
                 // Gunakan array kosong agar aplikasi tidak crash
-                $data = []; 
+                $data = [];
             } else {
                 // Jika sukses, baru panggil ->json()
                 $data = $response->json('data') ?? [];
@@ -242,16 +242,16 @@ class DashboardController extends Controller
     $dataUlasan = $kunjunganData->filter(function($k) use ($db) {
         return $db['survey']->contains('kunjungan_id', $k->id);
     })->map(function($k) use ($db) {
-        
+
         $survey = $db['survey']->firstWhere('kunjungan_id', $k->id);
-        
+
         if ($survey) {
             $survey->detail = $db['detail_survey']->firstWhere('survey_id', $survey->id);
         }
-        
+
         $k->survey = $survey;
         return $k;
-        
+
     })->values();
 
     // =========================================================
@@ -401,9 +401,9 @@ class DashboardController extends Controller
         'judul_dashboard' => 'Dashboard Utama',
         'data_kunjungan' => $kunjunganData,
         'daftar_prodi' => $daftar_prodi,
-        
+
         // VARIABEL BARU: Di-passing agar terbaca di dashboard utama
-        'data_ulasan' => $dataUlasan, 
+        'data_ulasan' => $dataUlasan,
 
         // Statistik
         'total_kunjungan' => $totalKunjungan,
@@ -427,7 +427,7 @@ class DashboardController extends Controller
 public function cekTotal(Request $request)
 {
     $googleScriptUrl = env('GOOGLE_SCRIPT_URL', 'https://script.google.com/macros/s/AKfycbz6QBns1Z3Sh1lhA5tgAJTOLL0sIdrTaudgNoSBitz3PrfCzH80vE36vMLkxTc10Lc1/exec');
-    
+
     // Ambil input prodi_id dari request dashboard
     $prodiId = $request->query('prodi_id', '');
 
@@ -618,7 +618,7 @@ public function analytics()
     // =========================================================
     // PERHITUNGAN TAMBAHAN UNTUK CARD STATISTIK ANALYTICS
     // =========================================================
-    
+
     // 1. Total Kunjungan (berdasarkan filter prodi yang aktif)
     $totalKunjunganCard = $kunjunganData->count();
 
@@ -637,9 +637,9 @@ public function analytics()
 
     // Rumus bobot performa SLA: Tepat Waktu (100%), Terlambat (50%), Ditolak (0%)
     $nilaiEfektivitasCard = ($jumlahTepatWaktuCard * 1) + ($jumlahTerlambatCard * 0.5) + ($jumlahDitolakCard * 0);
-    
-    $efektivitasPersenCard = $totalKunjunganCard > 0 
-        ? round(($nilaiEfektivitasCard / $totalKunjunganCard) * 100, 1) 
+
+    $efektivitasPersenCard = $totalKunjunganCard > 0
+        ? round(($nilaiEfektivitasCard / $totalKunjunganCard) * 100, 1)
         : 0;
     $efektivitasPersenCard = max(0, min(100, $efektivitasPersenCard));
 
@@ -851,11 +851,11 @@ private function exportLaporan($action, Request $request)
     if (in_array($user->role_id, [1, 3])) {
         // Super Admin & Kajur bisa memilih prodi melalui dropdown filter
         if ($request->filled('prodi_id') && $request->prodi_id !== 'Semua-Prodi') {
-            $prodiParam = $request->prodi_id; 
+            $prodiParam = $request->prodi_id;
         }
     } else {
         // Admin & Kaprodi otomatis terkunci ke ID prodi miliknya sendiri
-        $prodiParam = $user->prodi_id; 
+        $prodiParam = $user->prodi_id;
     }
 
     // --- PROTEKSI TAMBAHAN: JURUS SANITASI REGEX & TEXT MAPPING ---
@@ -1178,9 +1178,9 @@ public function manajemenAntrean(Request $request)
             'estimasi_sla' => $request->estimasi_sla,
             'satuan_sla' => $request->satuan_sla,
             'user_id' => $this->getSessionUser()->id ?? 0,
-            
+
             // TAMBAHKAN BARIS INI UNTUK MENCATAT WAKTU MULAI LAYANAN
-            'waktu_mulai_layanan' => Carbon::now()->toDateTimeString(), 
+            'waktu_mulai_layanan' => Carbon::now()->toDateTimeString(),
         ]);
 
         return back()->with('success', 'Antrean ' . $nomor_kunjungan . ' berhasil diproses.');
@@ -1321,12 +1321,12 @@ public function kirimEmailPimpinan(Request $request)
     ]);
 
     $db = $this->readMultipleSheets(['kunjungan', 'pengunjung', 'master_prodi_instansi', 'master_keperluan']);
-    
+
     // 1. Ambil data kunjungan berdasarkan ID
     $kunjungan = $db['kunjungan']->first(function($item) use ($request) {
         return isset($item->id) && $item->id == $request->kunjungan_id;
     });
-    
+
     if (!$kunjungan) return back()->with('error', 'Kunjungan tidak ditemukan');
     $kunjungan = (object) $kunjungan;
 
@@ -1337,7 +1337,7 @@ public function kirimEmailPimpinan(Request $request)
 
     if ($pengunjungData) {
         $kunjungan->pengunjung = (object) $pengunjungData;
-        
+
         // FIX SINKRONISASI: Ambil dari kolom 'asal_instansi' sesuai data sheet pengunjung Anda
         $kunjungan->pengunjung->instansi = $kunjungan->pengunjung->asal_instansi ?? 'Umum / Mandiri';
     } else {
@@ -1394,7 +1394,7 @@ public function controlPanel()
 
             // 1. Suntikkan teks Role
             $u->nama_role = isset($rolesMap[$roleId]) ? data_get($rolesMap[$roleId], 'nama_role') : 'Tanpa Role';
-            
+
             // 2. Suntikkan teks Prodi (Cerdas: Cek apakah prodi_id berupa ID Angka atau Teks Lama)
             if (isset($prodiMap[$prodiId])) {
                 // Jika berupa ID angka yang cocok dengan master_prodi
@@ -1403,7 +1403,7 @@ public function controlPanel()
                 // Jika berupa teks nama langsung (untuk data lama Anda seperti 'Teknik Informatika') atau kosong
                 $u->nama_prodi = $prodiId ?: null;
             }
-            
+
             return $u;
         })->toArray();
 
@@ -1450,7 +1450,7 @@ public function controlPanel()
             'prodi_id'   => $request->prodi_id ?? '', // ID angka tersimpan di sini
             'name'       => $request->name,
             'email'      => $request->email,
-            'password'   => $request->password, 
+            'password'   => $request->password,
             'foto'       => '',
             'created_at' => now()->format('Y-m-d H:i:s'),
             'updated_at' => now()->format('Y-m-d H:i:s')
@@ -1475,7 +1475,7 @@ public function controlPanel()
 
         $usersRaw = $this->readSheet('master_user');
         $usersCollection = collect($usersRaw);
-        
+
         $emailTerpakai = $usersCollection->where('email', $request->email)->where('id', '!=', $id)->first();
         if ($emailTerpakai) {
             return back()->withErrors(['email' => 'Email ini sudah digunakan oleh user lain.'])->withInput();
@@ -1524,7 +1524,7 @@ public function controlPanel()
     public function storeKeperluan(Request $request)
     {
         $request->validate(['keterangan' => 'required|string|max:255']);
-        
+
         $this->createSheet('master_keperluan', [
             'keterangan' => $request->keterangan
         ]);

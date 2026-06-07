@@ -50,7 +50,7 @@
             background:#dbe1ea;
             border-radius:20px;
         }
-        
+
         .dark ::-webkit-scrollbar-thumb {
             background: #334155;
         }
@@ -150,18 +150,17 @@
 
         {{-- MENU --}}
         <div class="flex-1 overflow-y-auto sidebar-scroll px-4 py-6">
-
-            <nav class="space-y-2">
+<nav class="space-y-2">
 
                 {{-- DASHBOARD --}}
                 @if(in_array($userSession->role_id, [1,2]))
                 <a href="{{ route('dashboard') }}"
                     class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
+                    {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
 
                     <i class="fa-solid fa-chart-pie text-lg"></i>
 
-                    <span class="font-bold text-sm">
+                    <span class="font-bold text-sm {{ request()->routeIs('dashboard') ? 'text-white' : '' }}">
                         Dashboard
                     </span>
 
@@ -172,38 +171,43 @@
                 @if(in_array($userSession->role_id, [1,2]))
                 <a href="{{ route('dashboard.antrean') }}"
                     class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard.antrean') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
+                    {{ request()->routeIs('dashboard.antrean') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
 
                     <i class="fa-solid fa-users-viewfinder text-lg"></i>
 
-                    <span class="font-bold text-sm">
+                    <span class="font-bold text-sm {{ request()->routeIs('dashboard.antrean') ? 'text-white' : '' }}">
                         Manajemen Antrean
                     </span>
 
                 </a>
                 @endif
 
-                {{-- ANALYTICS --}}
-                <a href="{{ route('dashboard.analytics') }}"
-                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard.analytics') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
+                {{-- ANALYTICS KPI (HANYA BAGIAN INI YANG DIUBAH) --}}
+<a href="{{ route('dashboard.analytics') }}"
+    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 group
+    {{ (request()->routeIs('dashboard.analytics') || (request()->routeIs('dashboard') && !in_array($userSession->role_id, [1,2])))
+        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 font-black'
+        : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
 
-                    <i class="fa-solid fa-chart-simple text-lg"></i>
+    <i class="fa-solid fa-chart-simple text-lg transition-colors
+        {{ (request()->routeIs('dashboard.analytics') || (request()->routeIs('dashboard') && !in_array($userSession->role_id, [1,2])))
+            ? 'text-white'
+            : 'text-slate-400 group-hover:text-blue-600 dark:text-slate-500' }}"></i>
 
-                    <span class="font-bold text-sm">
-                        Analytics KPI
-                    </span>
+    <span class="font-bold text-sm">
+        Analytics KPI
+    </span>
 
-                </a>
+</a>
 
                 {{-- LAPORAN --}}
                 <a href="{{ route('dashboard.laporan') }}"
                     class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard.laporan') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
+                    {{ request()->routeIs('dashboard.laporan') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
 
                     <i class="fa-solid fa-file-export text-lg"></i>
 
-                    <span class="font-bold text-sm">
+                    <span class="font-bold text-sm {{ request()->routeIs('dashboard.laporan') ? 'text-white' : '' }}">
                         Laporan Ekspor
                     </span>
 
@@ -212,11 +216,11 @@
                 {{-- ULASAN --}}
                 <a href="{{ route('dashboard.ulasan') }}"
                     class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard.ulasan') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
+                    {{ request()->routeIs('dashboard.ulasan') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
 
                     <i class="fa-solid fa-comment-dots text-lg"></i>
 
-                    <span class="font-bold text-sm">
+                    <span class="font-bold text-sm {{ request()->routeIs('dashboard.ulasan') ? 'text-white' : '' }}">
                         Ulasan Pengunjung
                     </span>
 
@@ -225,23 +229,23 @@
                 {{-- PIMPINAN --}}
                 @if($userSession->role_id != 1 && $userSession->role_id != 2)
 
-                <div class="pt-5 mt-5 border-t border-slate-100 dark:border-slate-700">
+                <div class="pt-5 mt-5 border-t-2 border-red-500/30">
 
-                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-slate-300 dark:text-slate-600 font-black">
+                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
                         Tugas Pimpinan
                     </p>
 
                     <a href="{{ route('pimpinan.konfirmasi') }}"
                         class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 relative
-                        {{ request()->routeIs('pimpinan.konfirmasi') ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-black' : 'menu-hover text-slate-400' }}">
+                        {{ request()->routeIs('pimpinan.konfirmasi') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20 font-black' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600' }}">
 
                     <i class="fa-solid fa-file-signature text-lg"></i>
 
-                    <span class="font-bold text-sm">
+                    <span class="font-bold text-sm {{ request()->routeIs('pimpinan.konfirmasi') ? 'text-white' : '' }}">
                         Konfirmasi Masuk
                     </span>
 
-                    <span class="absolute right-5 w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                    <span class="absolute right-5 w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
 
                     </a>
 
@@ -252,19 +256,19 @@
                 {{-- SUPER ADMIN --}}
                 @if($userSession->role_id == 1)
 
-                <div class="pt-5 mt-5 border-t border-slate-100 dark:border-slate-700">
+                <div class="pt-5 mt-5 border-t-2 border-red-500/30">
 
-                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-slate-300 dark:text-slate-600 font-black">
+                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
                         System Admin
                     </p>
 
                     <a href="{{ route('dashboard.control_panel') }}"
                         class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                        {{ request()->routeIs('dashboard.control_panel') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
+                        {{ request()->routeIs('dashboard.control_panel') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
 
                         <i class="fa-solid fa-gears text-lg"></i>
 
-                        <span class="font-bold text-sm">
+                        <span class="font-bold text-sm {{ request()->routeIs('dashboard.control_panel') ? 'text-white' : '' }}">
                             Sistem Control
                         </span>
 
@@ -350,14 +354,34 @@
                         </svg>
                     </button>
 
-                    {{-- NOTIF --}}
-                    @if($userSession->role_id == 2)
-                    <button class="relative w-11 h-11 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
-                        <i class="fa-regular fa-bell"></i>
-                        <span id="notif-dot" class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full hidden animate-ping"></span>
-                        <span id="notif-count" class="absolute -top-1 -right-1 text-[9px] bg-rose-600 text-white px-1.5 rounded-full font-bold hidden">0</span>
-                    </button>
-                    @endif
+{{-- NOTIF --}}
+{{-- NOTIF --}}
+@if($userSession->role_id == 2) {{-- Diubah agar hanya Admin (Role 2) saja yang bisa melihat --}}
+<div class="relative inline-block text-left">
+    <button type="button" onclick="toggleNotifDropdown()" id="btnNotifTrigger"
+        class="relative w-11 h-11 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
+        <i class="fa-regular fa-bell text-lg"></i>
+        <span id="notif-dot" class="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full hidden animate-ping"></span>
+        <span id="notif-count" class="absolute -top-1 -right-1 text-[9px] bg-rose-600 text-white px-1.5 py-0.5 rounded-full font-bold hidden">0</span>
+    </button>
+
+    <div id="notifDropdown"
+        class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 z-[99] overflow-hidden transform scale-95 opacity-0 transition-all duration-200 origin-top-right">
+
+        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+            <span class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Pemberitahuan Tamu</span>
+            <span class="text-[10px] bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold px-2 py-0.5 rounded-full">Baru</span>
+        </div>
+
+        <div class="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800" id="notifContainer"></div>
+
+        {{-- Tombol Link Footer Menyesuaikan Role (Hanya Admin) --}}
+        <a id="notifFooterLink" href="{{ route('dashboard.antrean') }}" class="hidden block text-center py-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-blue-600 dark:text-blue-400 border-t border-slate-100 dark:border-slate-800 transition-colors">
+            Lihat Semua Antrean
+        </a>
+    </div>
+</div>
+@endif
 
                     {{-- USER --}}
                     <div class="flex items-center gap-3">
@@ -403,7 +427,7 @@
         <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent dark:border-indigo-400 dark:border-t-transparent rounded-full animate-spin mb-4"></div>
         <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1">Sesi Berakhir</h3>
         <p class="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mb-4">Sistem otomatis keluar karena tidak ada aktivitas selama 5 menit.</p>
-        
+
         {{-- Progress Bar --}}
         <div class="w-full bg-slate-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden mb-5">
             <div id="idle-progress" class="bg-indigo-600 dark:bg-indigo-400 h-full w-full transition-all duration-1000 linear"></div>
@@ -456,7 +480,7 @@ function playNotifSound(){
 
 let lastNotifCount = 0;
 let isFirstLoad = true;
-let lastReminderTime = Date.now(); 
+let lastReminderTime = Date.now();
 
 function fetchNotifications(){
     fetch("{{ route('dashboard.check-notif') }}")
@@ -464,44 +488,108 @@ function fetchNotifications(){
     .then(data=>{
         const countBadge=document.getElementById('notif-count');
         const notifDot=document.getElementById('notif-dot');
+        const notifContainer=document.getElementById('notifContainer');
+        const notifFooterLink=document.getElementById('notifFooterLink'); // Tangkap elemen tombol bawah
+
+        // --- AMBIL ROLE USER UNTUK MEMBEDAKAN NOTIFIKASI ---
+        const userRoleId = "{{ session('user')['role_id'] ?? 2 }}";
 
         if(data.count>0){
             countBadge.innerText=data.count;
             countBadge.classList.remove('hidden');
             notifDot.classList.remove('hidden');
+
+            // Tampilkan tombol bawah karena ada data masuk
+            if(notifFooterLink) {
+                notifFooterLink.classList.remove('hidden');
+            }
+
+            // --- PERBEDAAN TEKS DROPDOWN (ADMIN VS PIMPINAN) ---
+            if(notifContainer) {
+                if(userRoleId == 2) {
+                    // Teks asli Anda untuk Admin Prodi (Role 2)
+                    notifContainer.innerHTML = `
+                        <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-3 items-start">
+                            <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                                <i class="fa-solid fa-user-clock text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-slate-800 dark:text-slate-200">Ada tamu baru menunggu konfirmasi!</p>
+                                <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Mohon periksa manajemen antrean untuk menerima atau menolak kunjungan.</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Teks khusus Pimpinan (Role 3 & 4) -> Hanya jika diteruskan admin
+                    notifContainer.innerHTML = `
+                        <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-3 items-start">
+                            <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                                <i class="fa-solid fa-file-signature text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-slate-800 dark:text-slate-200">Ada disposisi kunjungan baru!</p>
+                                <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Admin telah meneruskan data kunjungan tamu. Mohon periksa berkas untuk persetujuan.</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
         }else{
             countBadge.innerText='0';
             countBadge.classList.add('hidden');
             notifDot.classList.add('hidden');
+
+            // Sembunyikan tombol bawah jika kosong
+            if(notifFooterLink) {
+                notifFooterLink.classList.add('hidden');
+            }
+
+            // Suntikkan tampilan notifikasi kosong bersih
+            if(notifContainer) {
+                notifContainer.innerHTML = `
+                    <div class="p-6 text-center text-slate-400 dark:text-slate-500">
+                        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800/60 flex items-center justify-center mx-auto mb-3">
+                            <i class="fa-regular fa-bell-slash text-base text-slate-400"></i>
+                        </div>
+                        <p class="text-xs font-bold">Tidak ada pemberitahuan</p>
+                        <p class="text-[10px] mt-0.5">Semua kunjungan tamu telah ditangani.</p>
+                    </div>
+                `;
+            }
         }
+
+        // --- PERBEDAAN TEKS POP-UP TOAST SWEETALERT (ADMIN VS PIMPINAN) ---
+        const alertTitle = (userRoleId == 2) ? 'Antrean Baru!' : 'Disposisi Baru!';
+        const alertText  = (userRoleId == 2) ? `Ada ${data.count-lastNotifCount} antrean baru masuk.` : `Ada ${data.count-lastNotifCount} kunjungan tamu yang diteruskan ke Anda.`;
+        const remindText = (userRoleId == 2) ? 'Masih ada antrean yang belum diproses.' : 'Masih ada disposisi tamu yang menunggu persetujuan Anda.';
 
         if(!isFirstLoad && data.count > lastNotifCount){
             playNotifSound();
             Swal.fire({
-                title:'Antrean Baru!',
-                text:`Ada ${data.count-lastNotifCount} antrean baru masuk.`,
-                icon:'info',
-                toast:true,
-                position:'top-end',
-                showConfirmButton:false,
-                timer:5000,
-                timerProgressBar:true
+                title: alertTitle,
+                text: alertText,
+                icon: 'info',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 5000,
+                timerProgressBar: true
             });
         }
 
         if(data.count > 0 && data.has_pending === true){
             const now = Date.now();
-            if(now - lastReminderTime >= 180000){ 
+            if(now - lastReminderTime >= 180000){
                 playNotifSound();
                 Swal.fire({
-                    title:'Reminder Antrean',
-                    text:'Masih ada antrean yang belum diproses.',
-                    icon:'warning',
-                    toast:true,
-                    position:'top-end',
-                    showConfirmButton:false,
-                    timer:5000,
-                    timerProgressBar:true
+                    title: (userRoleId == 2) ? 'Reminder Antrean' : 'Reminder Disposisi',
+                    text: remindText,
+                    icon: 'warning',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 5000,
+                    timerProgressBar: true
                 });
                 lastReminderTime = now;
             }
@@ -526,7 +614,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 <script>
 // ==================== LOGIK AUTO-LOGOUT 5 MENIT IDLE (MODAL KUSTOM MURNI) ====================
-const maxIdleTimeMilidetik = 5 * 60 * 1000; 
+const maxIdleTimeMilidetik = 5 * 60 * 1000;
 let hitungMundurBar; // Variabel global untuk menyimpan interval progress bar
 
 function perbaruiAktivitasTerakhir() {
@@ -538,7 +626,7 @@ let koordinatYTerakhir = -1;
 
 function deteksiGerakanMouseAsli(event) {
     if (event.screenX === koordinatXTerakhir && event.screenY === koordinatYTerakhir) {
-        return; 
+        return;
     }
     koordinatXTerakhir = event.screenX;
     koordinatYTerakhir = event.screenY;
@@ -593,13 +681,13 @@ function jalankanPengecekanIdle() {
 function batalkanAutoLogout() {
     // 1. Sembunyikan modal kembali
     document.getElementById('idle-logout-modal').classList.add('hidden');
-    
+
     // 2. Matikan sisa hitung mundur 10 detik progress bar
     clearInterval(hitungMundurBar);
-    
+
     // 3. Reset waktu aktivitas di localStorage ke detik ini agar dianggap aktif lagi
     perbaruiAktivitasTerakhir();
-    
+
     // 4. Buka kunci filter agar pengecekan idle 5 menit berjalan normal dari awal lagi
     infoModalSedangTerbuka = false;
 }
@@ -624,8 +712,8 @@ function eksekusiLogout() {
 
 // ==================== LOGIK AUTO-REFRESH (30 DETIK) ====================
 document.addEventListener('DOMContentLoaded', function() {
-    let refreshTimeLeft = 30; 
-    let isPaused = false; 
+    let refreshTimeLeft = 30;
+    let isPaused = false;
     const timerElement = document.getElementById('refresh-timer-text');
 
     function aturEventInput() {
@@ -706,6 +794,32 @@ function toggleSidebar() {
     const overlay = document.getElementById('sidebarOverlay');
     sidebar.classList.toggle('-translate-x-full');
     overlay.classList.toggle('hidden');
+}
+
+function toggleNotifDropdown() {
+    const dropdown = document.getElementById('notifDropdown');
+    if (!dropdown) return;
+
+    if (dropdown.classList.contains('hidden')) {
+        dropdown.classList.remove('hidden');
+
+        // TAMBAHKAN INI: Menahan auto-refresh agar tidak mengganggu saat melihat notif
+        isModalOpen = true;
+
+        setTimeout(() => {
+            dropdown.classList.remove('scale-95', 'opacity-0');
+            dropdown.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    } else {
+        dropdown.classList.remove('scale-100', 'opacity-100');
+        dropdown.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            dropdown.classList.add('hidden');
+
+            // TAMBAHKAN INI: Jalankan kembali auto-refresh saat dropdown ditutup
+            isModalOpen = false;
+        }, 200);
+    }
 }
 </script>
 

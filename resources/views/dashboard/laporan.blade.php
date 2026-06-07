@@ -12,7 +12,7 @@
 
         {{-- ACTIONS ROW --}}
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-            
+
             {{-- FORM FILTER PRODI --}}
             <form action="{{ route('dashboard.laporan') }}" method="GET" class="w-full sm:w-auto">
                 @php
@@ -24,7 +24,7 @@
                         onchange="handleSelectProdiLoading(this)"
                         {{ !$isSuper ? 'disabled' : '' }}
                         class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-4 pr-10 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-950 outline-none appearance-none transition-all shadow-sm {{ !$isSuper ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800' : '' }}">
-                        
+
                         @if($isSuper)
                             <option value="" class="dark:bg-slate-800">🌍 Seluruh Program Studi</option>
                             @foreach($daftar_prodi as $p)
@@ -47,16 +47,16 @@
             {{-- DROPDOWN EKSPOR DENGAN DESAIN GRADASI PREMIUM --}}
             <div class="relative w-full sm:w-auto text-left">
                 <button type="button" onclick="toggleExportDropdown()" id="btnDropdownTrigger"
-                    class="inline-flex justify-center items-center gap-2 w-full sm:w-auto bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-400 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300">
+                    class="inline-flex justify-center items-center gap-2 w-full sm:w-auto  bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
                     <i class="fa-solid fa-file-export text-base"></i>
                     <span>Ekspor Laporan</span>
                     <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 ml-1" id="dropdownArrow"></i>
                 </button>
 
                 {{-- MENU DROPDOWN --}}
-                <div id="exportDropdownMenu" 
+                <div id="exportDropdownMenu"
                     class="hidden absolute right-0 mt-2 w-full sm:w-56 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-xl dark:shadow-slate-950/40 z-50 py-2 origin-top-right transition-all">
-                    
+
                     <button onclick="triggerExport('kunjungan')" class="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left">
                         <i class="fa-regular fa-file-excel text-emerald-500 text-base w-5"></i> Laporan Kunjungan
                     </button>
@@ -133,7 +133,7 @@
 {{-- MODAL EKSPOR PERIODE (TEMA PREMIUM MATCHING) --}}
 <div id="exportModal" class="fixed inset-0 z-[999] hidden bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-10 max-w-md w-full shadow-2xl animate-modal-up relative transition-colors duration-300">
-        
+
         {{-- HEADER MODAL --}}
         <div class="flex justify-between items-center mb-6">
             <div>
@@ -160,7 +160,7 @@
             <div class="flex flex-col gap-2">
                 <label class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2 tracking-widest">Tanggal Awal</label>
                 <div class="relative">
-                    <input type="date" id="exportStartDate" required 
+                    <input type="date" id="exportStartDate" required
                         class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-transparent rounded-2xl p-4 font-bold text-gray-800 dark:text-white focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-all">
                 </div>
             </div>
@@ -168,7 +168,7 @@
             <div class="flex flex-col gap-2">
                 <label class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2 tracking-widest">Tanggal Akhir</label>
                 <div class="relative">
-                    <input type="date" id="exportEndDate" required 
+                    <input type="date" id="exportEndDate" required
                         class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-transparent rounded-2xl p-4 font-bold text-gray-800 dark:text-white focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-all">
                 </div>
             </div>
@@ -211,7 +211,7 @@ let isModalOpen = false; // Flag pengunci cadangan
 function startAutoRefreshEngine() {
     // Bersihkan dulu timer yang lama jika ada agar tidak double
     if (refreshTimer) clearInterval(refreshTimer);
-    
+
     // Set timer baru (3 Menit = 180.000 ms)
     refreshTimer = setInterval(() => {
         if (!isModalOpen) {
@@ -306,9 +306,9 @@ function toggleExportDropdown() {
 
 function triggerExport(laporan) {
     stopAutoRefreshEngine(); // AMAN 1: Matikan mesin refresh total saat menu di-klik
-    isModalOpen = true; 
-    openExportModal(laporan); 
-    toggleExportDropdown(); 
+    isModalOpen = true;
+    openExportModal(laporan);
+    toggleExportDropdown();
 }
 
 let exportRoute = '';
@@ -317,10 +317,10 @@ function openExportModal(laporan){
     exportRoute = laporan;
     isModalOpen = true;
     stopAutoRefreshEngine(); // AMAN 2: Pastikan mati saat modal input tanggal muncul
-    
+
     document.getElementById('exportStartDate').value = '';
     document.getElementById('exportEndDate').value = '';
-    
+
     const modal = document.getElementById('exportModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -330,7 +330,7 @@ function closeExportModal(){
     const modal = document.getElementById('exportModal');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-    
+
     isModalOpen = false;
     startAutoRefreshEngine(); // Hidupkan kembali timer dari 0 jika user batal/klik X
 }
@@ -372,10 +372,10 @@ function downloadLaporan(type){
     const prodi = document.querySelector('[name=prodi_id]')?.value ?? '';
 
     // 2. Tembak Route Download Laravel
-    window.location = '/laporan/' + exportRoute + 
-                      '?type=' + type + 
-                      '&start_date=' + startDate + 
-                      '&end_date=' + endDate + 
+    window.location = '/laporan/' + exportRoute +
+                      '?type=' + type +
+                      '&start_date=' + startDate +
+                      '&end_date=' + endDate +
                       '&prodi_id=' + prodi;
 
     // 3. Berikan waktu jeda longgar (20 detik) untuk browser memunculkan dialog save file,
@@ -386,7 +386,7 @@ function downloadLaporan(type){
         }
         isModalOpen = false;
         startAutoRefreshEngine(); // Mesin refresh hidup kembali dengan aman dari nol!
-    }, 20000); 
+    }, 20000);
 }
 
 // HANDLER PRODI LOADING (Agar sejalan dan menggunakan sistem pengunci yang sama)

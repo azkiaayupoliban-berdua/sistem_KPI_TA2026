@@ -56,11 +56,11 @@
             </div>
 
             {{-- TOMBOL EKSPOR --}}
-            <button type="button" onclick="openExportModal()"
-                class="bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-400 text-white px-6 py-3.5 sm:py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all text-center">
-                <i class="fa-solid fa-file-export mr-2"></i>
-                Laporan Pengunjung
-            </button>
+          <button type="button" onclick="openExportModal()"
+    class="bg-gradient-to-r from-[#0b3a82] via-[#1e293b] to-red-600 text-white px-6 py-3.5 sm:py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all text-center">
+    <i class="fa-solid fa-file-export mr-2"></i>
+    Laporan Pengunjung
+</button>
 
         </div>
     </div>
@@ -143,12 +143,12 @@
                 $isSelesai = $k->status_layanan == 'Selesai';
                 $isDitolak = $k->status_layanan == 'Ditolak';
 
-                $borderClass = $isDitolak 
-                    ? 'border-rose-500 bg-rose-50/20 dark:bg-rose-950/10' 
-                    : ($isAntre 
-                        ? 'border-amber-300 dark:border-amber-500/50' 
-                        : ($isDiproses 
-                            ? 'border-blue-300 dark:border-blue-500/50' 
+                $borderClass = $isDitolak
+                    ? 'border-rose-500 bg-rose-50/20 dark:bg-rose-950/10'
+                    : ($isAntre
+                        ? 'border-amber-300 dark:border-amber-500/50'
+                        : ($isDiproses
+                            ? 'border-blue-300 dark:border-blue-500/50'
                             : 'border-emerald-300 dark:border-emerald-500/50'
                         )
                     );
@@ -156,7 +156,7 @@
             @endphp
 
             <div class="bg-white dark:bg-slate-800 rounded-[2rem] border-2 {{ $borderClass }} p-4 sm:p-5 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group relative overflow-hidden">
-                
+
                 <div class="absolute -right-4 -top-4 w-20 h-20 bg-slate-50 dark:bg-slate-700/30 rounded-full -z-0 group-hover:scale-150 transition-transform duration-500"></div>
 
                 <div class="relative z-10 flex flex-col h-full">
@@ -164,8 +164,8 @@
                     <div class="flex items-start justify-between gap-3 mb-4">
                         <div class="flex-1">
                             <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest
-                                {{ $k->status_layanan == 'Ditolak' 
-                                    ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 ring-1 ring-rose-200 dark:ring-rose-800' 
+                                {{ $k->status_layanan == 'Ditolak'
+                                    ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 ring-1 ring-rose-200 dark:ring-rose-800'
                                     : $badgeClass }}">
                                 {{ $k->status_layanan }}
                             </span>
@@ -213,7 +213,7 @@
 
                     {{-- FOOTER BUTTONS --}}
                     <div class="mt-auto flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
-                        
+
                         <div class="flex items-center gap-2 w-full">
                             @if($isAntre)
                                 <div class="flex flex-row items-center gap-2 w-full">
@@ -222,7 +222,7 @@
                                         <i class="fa-solid fa-play text-[10px] pl-0.5"></i>
                                         <span class="text-[11px] font-black uppercase tracking-wider">Mulai</span>
                                     </button>
-                                    
+
                                     <button type="button" onclick="bukaModalTolak('{{ $k->id }}')"
                                         class="flex-1 h-9 px-3 sm:px-4 flex items-center justify-center gap-1.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500 dark:hover:bg-rose-600 hover:text-white dark:hover:text-white rounded-xl transition-all active:scale-[0.98]">
                                         <i class="fa-solid fa-xmark text-xs"></i>
@@ -295,8 +295,7 @@
             </a>
         @endif
     </div>
-
-    {{-- LIST 3 ULASAN TERBARU --}}
+{{-- LIST 3 ULASAN TERBARU --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
         @forelse(($data_ulasan ?? collect())->take(3) as $item)
             @php
@@ -312,8 +311,9 @@
                                 <i class="fa-solid fa-star text-xs {{ $i <= $ratingBulat ? '' : 'text-slate-100 dark:text-slate-700' }}"></i>
                             @endfor
                         </div>
+                        <!-- MENGUBAH ASAL INSTANSI MENJADI DIRAHASIAKAN -->
                         <span class="bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-slate-100 dark:border-slate-700 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/40 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 group-hover:border-indigo-100 dark:group-hover:border-indigo-900 transition-colors">
-                            {{ $item->pengunjung->asal_instansi ?? 'UMUM' }}
+                            DIRAHASIAKAN
                         </span>
                     </div>
                     <p class="text-slate-700 dark:text-slate-300 font-bold text-sm sm:text-base leading-relaxed mb-6 text-left italic">
@@ -321,8 +321,9 @@
                     </p>
                 </div>
                 <div class="pt-4 border-t border-slate-50 dark:border-slate-700 flex flex-col text-left">
+                    <!-- MENGUBAH NAMA LENGKAP MENJADI ANONIM -->
                     <span class="text-slate-900 dark:text-white font-black text-sm">
-                        {{ $item->pengunjung->nama_lengkap ?? 'Pengunjung' }}
+                        Anonim
                     </span>
                     <div class="flex items-center gap-2 mt-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
@@ -338,13 +339,12 @@
             </div>
         @endforelse
     </div>
-
 </div>
 
 {{-- MODAL EKSPOR PERIODE (TEMA PREMIUM MATCHING) --}}
 <div id="exportModal" class="fixed inset-0 z-[999] hidden bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-10 max-w-md w-full shadow-2xl animate-modal-up relative transition-colors duration-300">
-        
+
         {{-- HEADER MODAL --}}
         <div class="flex justify-between items-center mb-6">
             <div>
@@ -371,7 +371,7 @@
             <div class="flex flex-col gap-2">
                 <label class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2 tracking-widest">Tanggal Awal</label>
                 <div class="relative">
-                    <input type="date" id="exportStartDate" required 
+                    <input type="date" id="exportStartDate" required
                         class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-transparent rounded-2xl p-4 font-bold text-gray-800 dark:text-white focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-all">
                 </div>
             </div>
@@ -379,7 +379,7 @@
             <div class="flex flex-col gap-2">
                 <label class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2 tracking-widest">Tanggal Akhir</label>
                 <div class="relative">
-                    <input type="date" id="exportEndDate" required 
+                    <input type="date" id="exportEndDate" required
                         class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-transparent rounded-2xl p-4 font-bold text-gray-800 dark:text-white focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-all">
                 </div>
             </div>
@@ -387,11 +387,11 @@
 
         {{-- TOMBOL PILIHAN FORMAT DOWNLOAD --}}
         <div class="grid grid-cols-2 gap-4">
-            <button onclick="downloadLaporan('xlsx')" 
+            <button onclick="downloadLaporan('xlsx')"
                 class="flex items-center justify-center gap-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl dark:shadow-none hover:scale-[1.02]">
                 <i class="fa-regular fa-file-excel text-base"></i> Excel
             </button>
-            <button onclick="downloadLaporan('pdf')" 
+            <button onclick="downloadLaporan('pdf')"
                 class="flex items-center justify-center gap-2.5 bg-rose-600 hover:bg-rose-700 dark:bg-rose-500 dark:hover:bg-rose-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl dark:shadow-none hover:scale-[1.02]">
                 <i class="fa-regular fa-file-pdf text-base"></i> PDF
             </button>
@@ -414,23 +414,23 @@
             <h2 class="text-xl font-black text-slate-900 dark:text-white">Tolak Antrean</h2>
             <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Wajib isi alasan penolakan</p>
         </div>
-        <form id="formTolak" method="POST">
-            @csrf
-            <textarea name="alasan_tolak" required
-                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-rose-100 dark:focus:ring-rose-950 outline-none"
-                placeholder="Contoh: Dokumen tidak lengkap / data tidak valid"></textarea>
-            <div class="flex gap-3 mt-5">
-                <button type="button" onclick="tutupModalTolak()" class="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-black text-xs uppercase">Batal</button>
-                <button type="submit" class="flex-1 py-3 rounded-2xl bg-rose-600 text-white font-black text-xs uppercase shadow-lg dark:shadow-none">Kirim Penolakan</button>
-            </div>
-        </form>
+       <form id="formTolak" method="POST" action="">
+    @csrf
+    <textarea name="alasan_tolak" required
+        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-rose-100 dark:focus:ring-rose-950 outline-none"
+        placeholder="Contoh: Dokumen tidak lengkap / data tidak valid"></textarea>
+    <div class="flex gap-3 mt-5">
+        <button type="button" onclick="tutupModalTolak()" class="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-black text-xs uppercase">Batal</button>
+        <button type="submit" class="flex-1 py-3 rounded-2xl bg-rose-600 text-white font-black text-xs uppercase shadow-lg dark:shadow-none">Kirim Penolakan</button>
+    </div>
+</form>
     </div>
 </div>
 
 {{-- MODAL SLA --}}
 <div id="modalProsesSLA" class="fixed inset-0 z-[999] hidden items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity duration-300">
     <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] p-6 sm:p-10 shadow-2xl border dark:border-slate-800 transform transition-all scale-95 opacity-0 relative overflow-hidden" id="modalContentSLA">
-        
+
         <div id="loadingOverlaySLA" class="absolute inset-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center hidden transition-all duration-300">
             <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
             <p class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest animate-pulse">Memproses...</p>
@@ -443,20 +443,20 @@
             <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Estimasi Layanan</h2>
             <p class="text-slate-400 dark:text-slate-500 text-xs sm:text-sm mt-2 font-medium">Tentukan waktu pelayanan secara realistis</p>
         </div>
-        
+
         <div class="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50">
             <p class="text-[10px] uppercase font-black tracking-widest text-amber-600 dark:text-amber-400 mb-2">Perhatian</p>
             <p class="text-xs text-amber-700 dark:text-amber-300 font-semibold leading-relaxed">
                 Estimasi hanya bisa diinput <b>1 kali</b>. Pastikan sudah sesuai dengan <b>jenis keperluan</b> dan perkiraan waktu pengerjaan layanan.
             </p>
         </div>
-        
+
         <form id="formSLA" method="POST">
             @csrf
             <div class="grid grid-cols-1 gap-5 mb-8">
                 <div class="space-y-2">
                     <label class="text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 ml-2 tracking-widest">Durasi Pelayanan</label>
-                    <input type="number" id="inputEstimasi" name="estimasi_sla" required 
+                    <input type="number" id="inputEstimasi" name="estimasi_sla" required
                         class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 font-bold text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-950 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
                         placeholder="Contoh: 15">
                 </div>
@@ -473,7 +473,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="flex flex-col sm:flex-row gap-3">
                 <button type="button" id="btnKembali" onclick="tutupModal()" class="order-2 sm:order-1 flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-black uppercase text-[11px] tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Kembali</button>
                 <button type="submit" id="btnSubmitSLA" class="order-1 sm:order-2 flex-1 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-[11px] tracking-widest shadow-lg dark:shadow-none transition-all flex items-center justify-center gap-2">
@@ -487,20 +487,20 @@
 {{-- JAVASCRIPT LOGIC --}}
 <script>
 let isModalOpen = false;
-    
+
     function openExportModal() {
         document.getElementById('exportStartDate').value = '';
         document.getElementById('exportEndDate').value = '';
-        
+
         const modal = document.getElementById('exportModal');
         const content = document.getElementById('modalContentExport');
-        
+
         // KUNCI 1: Ubah jadi true agar auto-refresh STOP saat modal terbuka
         isModalOpen = true;
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         setTimeout(() => {
             if (content) {
                 content.classList.remove('scale-95', 'opacity-0');
@@ -512,16 +512,16 @@ let isModalOpen = false;
     function closeExportModal() {
         const modal = document.getElementById('exportModal');
         const content = document.getElementById('modalContentExport');
-        
+
         if (content) {
             content.classList.remove('scale-100', 'opacity-100');
             content.classList.add('scale-95', 'opacity-0');
         }
-        
+
         setTimeout(() => {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
-            
+
             // KUNCI 2: Jika modal ditutup manual tanpa download, kembalikan ke false agar refresh JALAN LAGI
             isModalOpen = false;
         }, 200);
@@ -550,16 +550,16 @@ let isModalOpen = false;
 
         // 2. TUTUP MODAL INPUT TANGGAL
         closeExportModal();
-        
+
         // KUNCI 3: Karena closeExportModal() di atas mengubah status jadi false,
         // kita paksa kunci lagi ke TRUE agar auto-refresh TETAP STOP selama pop-up loading berputar
         isModalOpen = true;
 
         // 3. JALANKAN DOWNLOAD (KODE ASLI ANDA TIDAK DIUBAH)
-        window.location = '/laporan/pengunjung' + 
-                          '?type=' + type + 
-                          '&start_date=' + startDate + 
-                          '&end_date=' + endDate + 
+        window.location = '/laporan/pengunjung' +
+                          '?type=' + type +
+                          '&start_date=' + startDate +
+                          '&end_date=' + endDate +
                           '&prodi_id=' + prodiId;
 
         // 4. TUTUP OTOMATIS POP-UP LOADING SETELAH FORMAT FILE DILEMPAR KE BROWSER
@@ -567,7 +567,7 @@ let isModalOpen = false;
             if (loadingModal) {
                 loadingModal.classList.add('hidden');
             }
-            
+
             // KUNCI 4: Setelah 15 detik berlalu dan loading hilang, kembalikan ke false agar refresh KEMBALI NORMAL
             isModalOpen = false;
         }, 15000); // Menutup loading dalam 15 detik setelah download dipicu
@@ -577,12 +577,15 @@ let isModalOpen = false;
         const modal = document.getElementById('modalProsesSLA');
         const content = document.getElementById('modalContentSLA');
         const form = document.getElementById('formSLA');
-        
+
+        // DIKUNCI KE TRUE: Agar dashboard tidak tiba-tiba auto-refresh saat Anda sedang mengetik estimasi waktu
+        isModalOpen = true;
+
         form.action = `/dashboard/mulai-proses/${nomor}`;
-        
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         setTimeout(() => {
             if (content) {
                 content.classList.remove('scale-95', 'opacity-0');
@@ -594,15 +597,18 @@ let isModalOpen = false;
     function tutupModal() {
         const modal = document.getElementById('modalProsesSLA');
         const content = document.getElementById('modalContentSLA');
-        
+
         if (content) {
             content.classList.remove('scale-100', 'opacity-100');
             content.classList.add('scale-95', 'opacity-0');
         }
-        
+
         setTimeout(() => {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+
+            // DIKEMBALIKAN KE FALSE: Agar auto-refresh aktif kembali setelah modal ditutup manual
+            isModalOpen = false;
         }, 200);
     }
 
@@ -619,7 +625,13 @@ let isModalOpen = false;
     function bukaModalTolak(id) {
         const modal = document.getElementById('modalTolak');
         const form = document.getElementById('formTolak');
-        form.action = `/dashboard/tolak-antrean/${id}`;
+
+        // KUNCI MODAL TOLAK: Stop auto-refresh saat modal penolakan dibuka
+        isModalOpen = true;
+
+        // PERBAIKAN: Diubah dari /tolak-antrean/ menjadi /tolak/ agar sesuai dengan Route Laravel Anda
+        form.action = `/dashboard/tolak/${id}`;
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     }
@@ -628,6 +640,8 @@ let isModalOpen = false;
         const modal = document.getElementById('modalTolak');
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+
+        isModalOpen = false;
     }
 
     function konfirmasiSelesai(id, nomor) {
@@ -636,6 +650,9 @@ let isModalOpen = false;
         }
     }
 
+    // ====================================================================================
+    // PERBAIKAN AMAN: MERAPIKAN STRUKTUR SUBMIT FORM ESTIMASI TANPA MENGHAPUS LOGIKA KODE
+    // ====================================================================================
     document.getElementById('formSLA').addEventListener('submit', function(e) {
         const overlay = document.getElementById('loadingOverlaySLA');
         const btnKembali = document.getElementById('btnKembali');
@@ -644,25 +661,36 @@ let isModalOpen = false;
         const inputEstimasi = document.getElementById('inputEstimasi');
         const selectSatuan = document.getElementById('selectSatuan');
 
-        overlay.classList.remove('hidden');
+        if (overlay) {
+            overlay.classList.remove('hidden');
+        }
 
+        // Matikan tombol saja agar user tidak melakukan klik ganda (double-submit)
         btnKembali.disabled = true;
         btnSubmit.disabled = true;
-        inputEstimasi.disabled = true;
-        selectSatuan.disabled = true;
 
         btnKembali.classList.add('opacity-50', 'cursor-not-allowed');
         btnSubmit.classList.add('opacity-80', 'cursor-not-allowed');
-        
-        function matikanLoading() {
-            overlay.classList.add('hidden');
-            btnKembali.disabled = false;
-            btnSubmit.disabled = false;
-            inputEstimasi.disabled = false;
-            selectSatuan.disabled = false;
-            btnKembali.classList.remove('opacity-50', 'cursor-not-allowed');
-            btnSubmit.classList.remove('opacity-80', 'cursor-not-allowed');
-        }
+
+        // Perbaikan Utama: Baris inputEstimasi.disabled & selectSatuan.disabled DIHAPUS dari sini,
+        // agar data durasi yang Anda masukkan di layar dikirim 100% utuh ke Laravel Anda.
     });
+
+    // Fungsi bawaan Anda dikeluarkan secara rapi agar tidak merusak penutupan tag script
+    function matikanLoading() {
+        const overlay = document.getElementById('loadingOverlaySLA');
+        const btnKembali = document.getElementById('btnKembali');
+        const btnSubmit = document.getElementById('btnSubmitSLA');
+        const inputEstimasi = document.getElementById('inputEstimasi');
+        const selectSatuan = document.getElementById('selectSatuan');
+
+        if (overlay) overlay.classList.add('hidden');
+        btnKembali.disabled = false;
+        btnSubmit.disabled = false;
+        inputEstimasi.disabled = false;
+        selectSatuan.disabled = false;
+        btnKembali.classList.remove('opacity-50', 'cursor-not-allowed');
+        btnSubmit.classList.remove('opacity-80', 'cursor-not-allowed');
+    }
 </script>
 @endsection

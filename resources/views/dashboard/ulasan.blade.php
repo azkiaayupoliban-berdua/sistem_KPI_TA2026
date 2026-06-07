@@ -63,7 +63,7 @@
 
             {{-- TOMBOL TRIGGER MODAL EKSPOR PREMIUM --}}
             <button type="button" onclick="openExportModal('ulasan')"
-                class="inline-flex justify-center items-center bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-400 text-white px-6 py-3.5 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 w-full sm:w-auto">
+                class="inline-flex justify-center items-center  bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
                 <i class="fa-solid fa-file-export mr-2"></i>
                 Laporan Ulasan
             </button>
@@ -81,7 +81,7 @@
             @endphp
 
             <div class="bg-white dark:bg-slate-800 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-gray-50 dark:border-slate-700/60 shadow-sm hover:shadow-xl dark:hover:shadow-slate-950/30 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group">
-                
+
                 <div class="flex justify-between items-start mb-8">
                     <div class="flex gap-1 text-amber-400">
                         @for($i = 1; $i <= 5; $i++)
@@ -135,7 +135,7 @@
 {{-- MODAL EKSPOR PERIODE --}}
 <div id="exportModal" class="fixed inset-0 z-[999] hidden bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div id="modalContentExport" class="bg-white dark:bg-slate-800 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-10 max-w-md w-full shadow-2xl opacity-0 scale-95 transform transition-all duration-200 border border-transparent dark:border-slate-700">
-        
+
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h3 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white tracking-tight">Periode Laporan</h3>
@@ -158,13 +158,13 @@
         <div class="space-y-5 mb-8">
             <div class="flex flex-col gap-2">
                 <label class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase ml-2 tracking-widest">Tanggal Awal</label>
-                <input type="date" id="exportStartDate" required 
+                <input type="date" id="exportStartDate" required
                     class="w-full bg-gray-50 dark:bg-slate-700 border-2 border-transparent rounded-2xl p-4 font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-all">
             </div>
 
             <div class="flex flex-col gap-2">
                 <label class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase ml-2 tracking-widest">Tanggal Akhir</label>
-                <input type="date" id="exportEndDate" required 
+                <input type="date" id="exportEndDate" required
                     class="w-full bg-gray-50 dark:bg-slate-700 border-2 border-transparent rounded-2xl p-4 font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-all">
             </div>
         </div>
@@ -193,22 +193,22 @@
 
 @push('scripts')
 <script>
-let exportRoute = 'ulasan'; 
+let exportRoute = 'ulasan';
 let isModalOpen = false;
 
 function openExportModal(laporan){
     if(laporan) exportRoute = laporan;
     isModalOpen = true;
-    
+
     document.getElementById('exportStartDate').value = '';
     document.getElementById('exportEndDate').value = '';
-    
+
     const modal = document.getElementById('exportModal');
     const content = document.getElementById('modalContentExport');
-    
+
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    
+
     setTimeout(() => {
         if (content) {
             content.classList.remove('scale-95', 'opacity-0');
@@ -220,12 +220,12 @@ function openExportModal(laporan){
 function closeExportModal(){
     const modal = document.getElementById('exportModal');
     const content = document.getElementById('modalContentExport');
-    
+
     if (content) {
         content.classList.remove('scale-100', 'opacity-100');
         content.classList.add('scale-95', 'opacity-0');
     }
-    
+
     setTimeout(() => {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
@@ -263,10 +263,10 @@ function downloadLaporan(type){
     const prodiSelect = document.querySelector('[name=prodi_id]');
     const prodi = prodiSelect ? prodiSelect.value : '';
 
-    window.location = '/laporan/' + exportRoute + 
-                      '?type=' + type + 
-                      '&start_date=' + startDate + 
-                      '&end_date=' + endDate + 
+    window.location = '/laporan/' + exportRoute +
+                      '?type=' + type +
+                      '&start_date=' + startDate +
+                      '&end_date=' + endDate +
                       '&prodi_id=' + encodeURIComponent(prodi);
 
     setTimeout(function() {

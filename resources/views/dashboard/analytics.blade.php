@@ -7,7 +7,7 @@
         <h2 class="text-3xl md:text-4xl font-black text-gray-800 dark:text-white tracking-tight">Analytics Overview</h2>
         <p class="text-slate-400 dark:text-slate-400 text-xs md:text-sm font-medium mt-1 md:mt-2">Ringkasan performa layanan institusi.</p>
     </div>
-    
+
     <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
         @if($user->role_id == 1 || $user->role_id == 3)
             <form action="{{ route('dashboard.analytics') }}" method="GET" class="w-full sm:w-auto">
@@ -36,14 +36,14 @@
         {{-- DROPDOWN EKSPOR DENGAN DESAIN GRADASI PREMIUM --}}
         <div class="relative w-full sm:w-auto text-left">
             <button type="button" onclick="toggleExportDropdown()" id="btnDropdownTrigger"
-                class="inline-flex justify-center items-center gap-2 w-full sm:w-auto bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-400 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300">
-                <i class="fa-solid fa-file-export text-base"></i>
-                <span>Ekspor Laporan</span>
-                <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 ml-1" id="dropdownArrow"></i>
-            </button>
+    class="inline-flex justify-center items-center gap-2 w-full sm:w-auto bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
+    <i class="fa-solid fa-file-export text-base"></i>
+    <span>Ekspor Laporan</span>
+    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 ml-1" id="dropdownArrow"></i>
+</button>
 
             {{-- MENU DROPDOWN --}}
-            <div id="exportDropdownMenu" 
+            <div id="exportDropdownMenu"
                 class="hidden absolute right-0 mt-2 w-full sm:w-56 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-xl z-50 py-2 origin-top-right transition-all">
                 <button onclick="triggerExport('kunjungan')" class="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left">
                     <i class="fa-regular fa-file-excel text-emerald-500 text-base w-5"></i> Laporan Kunjungan
@@ -127,7 +127,7 @@
     {{-- Grafik Skor Kepuasan --}}
     <div class="bg-white dark:bg-slate-800 p-5 md:p-8 rounded-[2rem] md:rounded-[3rem] border border-gray-50 dark:border-slate-700/50 shadow-sm flex flex-col items-center relative transition-colors">
         <h3 class="text-lg md:text-xl font-black text-gray-800 dark:text-white mb-6 md:mb-10 self-start tracking-tight">Skor Kepuasan</h3>
-        
+
         <div class="relative w-full aspect-square max-w-[200px] md:max-w-[240px]">
             <canvas id="satisfactionChart"></canvas>
             <div class="absolute inset-0 flex flex-col items-center justify-center">
@@ -188,7 +188,7 @@
 {{-- MODAL EKSPOR PERIODE (TEMA PREMIUM MATCHING) --}}
 <div id="exportModal" class="fixed inset-0 z-[999] hidden bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-10 max-w-md w-full shadow-2xl animate-modal-up relative transition-colors duration-300">
-        
+
         {{-- HEADER MODAL --}}
         <div class="flex justify-between items-center mb-6">
             <div>
@@ -215,7 +215,7 @@
             <div class="flex flex-col gap-2">
                 <label class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2 tracking-widest">Tanggal Awal</label>
                 <div class="relative">
-                    <input type="date" id="exportStartDate" required 
+                    <input type="date" id="exportStartDate" required
                         class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-transparent rounded-2xl p-4 font-bold text-gray-800 dark:text-white focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-all">
                 </div>
             </div>
@@ -223,7 +223,7 @@
             <div class="flex flex-col gap-2">
                 <label class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2 tracking-widest">Tanggal Akhir</label>
                 <div class="relative">
-                    <input type="date" id="exportEndDate" required 
+                    <input type="date" id="exportEndDate" required
                         class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-transparent rounded-2xl p-4 font-bold text-gray-800 dark:text-white focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-all">
                 </div>
             </div>
@@ -266,7 +266,7 @@
 document.addEventListener("DOMContentLoaded", function() {
     // Deteksi apakah layout.app menggunakan mode gelap
     const isDark = document.documentElement.classList.contains('dark');
-    
+
     // Konfigurasi warna dinamis Chart berdasarkan mode
     const gridColor = isDark ? '#334155' : '#f1f5f9';
     const textColorPrimary = isDark ? '#cbd5e1' : '#64748b';
@@ -282,20 +282,20 @@ document.addEventListener("DOMContentLoaded", function() {
             labels: ['Sangat Puas', 'Puas', 'Kurang Puas', 'Tidak Puas'],
             datasets: [{
                 data: [
-                    {{ $skor_kepuasan['sangat_puas'] }}, 
-                    {{ $skor_kepuasan['puas'] }}, 
-                    {{ $skor_kepuasan['kurang_puas'] }}, 
+                    {{ $skor_kepuasan['sangat_puas'] }},
+                    {{ $skor_kepuasan['puas'] }},
+                    {{ $skor_kepuasan['kurang_puas'] }},
                     {{ $skor_kepuasan['tidak_puas'] }}
                 ],
-                backgroundColor: ['#4f46e5', '#10b981', '#fbbf24', '#f43f5e'], 
+                backgroundColor: ['#4f46e5', '#10b981', '#fbbf24', '#f43f5e'],
                 borderWidth: 0,
                 cutout: '82%',
                 borderRadius: 15,
                 spacing: 4
             }]
         },
-        options: { 
-            responsive: true, 
+        options: {
+            responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } }
         }
@@ -321,13 +321,13 @@ document.addEventListener("DOMContentLoaded", function() {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { 
-                    grid: { color: gridColor, drawBorder: false }, 
-                    ticks: { color: textColorSecondary, font: { size: 10, weight: '600' } } 
+                y: {
+                    grid: { color: gridColor, drawBorder: false },
+                    ticks: { color: textColorSecondary, font: { size: 10, weight: '600' } }
                 },
-                x: { 
-                    grid: { display: false }, 
-                    ticks: { color: textColorPrimary, font: { size: 10, weight: '700' } } 
+                x: {
+                    grid: { display: false },
+                    ticks: { color: textColorPrimary, font: { size: 10, weight: '700' } }
                 }
             }
         }
@@ -374,24 +374,24 @@ document.addEventListener("DOMContentLoaded", function() {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: { 
-                    beginAtZero: true, 
-                    suggestedMax: 5, 
-                    ticks: { stepSize: 1, color: textColorPrimary }, 
-                    grid: { color: gridColor } 
+                y: {
+                    beginAtZero: true,
+                    suggestedMax: 5,
+                    ticks: { stepSize: 1, color: textColorPrimary },
+                    grid: { color: gridColor }
                 },
-                x: { 
+                x: {
                     ticks: { color: textColorPrimary },
-                    grid: { display: false } 
+                    grid: { display: false }
                 }
             },
-            plugins: { 
-                legend: { 
-                    display: true, 
-                    position: 'top', 
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
                     align: 'end',
                     labels: { color: textColorPrimary, font: { weight: '600' } }
-                } 
+                }
             }
         }
     });
@@ -423,16 +423,16 @@ function toggleExportDropdown() {
 }
 
 function triggerExport(laporan) {
-    toggleExportDropdown(); 
-    openExportModal(laporan); 
+    toggleExportDropdown();
+    openExportModal(laporan);
 }
 
 function openExportModal(laporan) {
-    exportRoute = laporan; 
+    exportRoute = laporan;
     document.getElementById('exportStartDate').value = '';
     document.getElementById('exportEndDate').value = '';
-    
-    isModalOpen = true; 
+
+    isModalOpen = true;
 
     const modal = document.getElementById('exportModal');
     if (modal) {
@@ -447,8 +447,8 @@ function closeExportModal() {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     }
-    
-    isModalOpen = false; 
+
+    isModalOpen = false;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -491,13 +491,13 @@ function downloadLaporan(type) {
     }
 
     // 5. Pastikan status auto refresh tetap PAUSED selama loading berputar
-    isModalOpen = true; 
+    isModalOpen = true;
 
     // 6. Jalankan pemanggilan rute asli bawaan kode Anda (Bebas Error Nama Berubah)
-    window.location = '/laporan/' + exportRoute + 
-                      '?type=' + type + 
-                      '&start_date=' + startDate + 
-                      '&end_date=' + endDate + 
+    window.location = '/laporan/' + exportRoute +
+                      '?type=' + type +
+                      '&start_date=' + startDate +
+                      '&end_date=' + endDate +
                       '&prodi_id=' + prodi;
 
     // 7. Sembunyikan pop-up loading otomatis setelah file dikirim browser & aktifkan refresh kembali
@@ -506,7 +506,7 @@ function downloadLaporan(type) {
             loadingModal.classList.add('hidden');
         }
         isModalOpen = false; // Auto refresh aktif kembali normal
-    }, 15000); 
+    }, 15000);
 }
 </script>
 @endpush
