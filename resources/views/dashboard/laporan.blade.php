@@ -117,11 +117,11 @@
         </div>
     </div>
 
-    {{-- GRAFIK KINERJA LAYANAN --}}
+{{-- GRAFIK KINERJA LAYANAN --}}
     <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm transition-colors duration-300">
         <div class="mb-6">
             <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">Perbandingan Kinerja Layanan</h3>
-            <p class="text-slate-500 dark:text-slate-400 text-sm">Jumlah berkas layanan yang diselesaikan.</p>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">Jumlah layanan didistribusikan per hari, dibagi berdasarkan program studi utama.</p>
         </div>
         <div class="relative h-64 sm:h-72 w-full">
             <canvas id="kinerjaChart"></canvas>
@@ -234,54 +234,10 @@ function stopAutoRefreshEngine() {
 
 // Jalankan pertama kali saat halaman selesai dimuat
 document.addEventListener("DOMContentLoaded", function(){
+    // Menyalakan engine auto-refresh halaman
     startAutoRefreshEngine();
 
-    // =======================================================
-    // INTEGRASI CHART JS & EVENT CLICK LUAR (Tetap Seperti Asli)
-    // =======================================================
-    const isDarkMode = document.documentElement.classList.contains('dark');
-    const gridColor = isDarkMode ? 'rgba(51, 65, 85, 0.5)' : '#f1f5f9';
-    const labelColor = isDarkMode ? '#94a3b8' : '#64748b';
-    const chartBgColor = isDarkMode ? '#6366f1' : '#4f46e5';
-
-    const ctx = document.getElementById('kinerjaChart').getContext('2d');
-    const labels = {!! json_encode($labelGrafik) !!};
-    const data = {!! json_encode($dataGrafik) !!};
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Layanan Selesai',
-                data: data,
-                backgroundColor: chartBgColor,
-                borderRadius: 6,
-                barThickness: window.innerWidth < 640 ? 12 : 18,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: isDarkMode ? '#0f172a' : '#1e293b',
-                    borderColor: isDarkMode ? '#334155' : 'transparent',
-                    borderWidth: 1,
-                    padding: 12,
-                    titleFont: { size: 13 },
-                    bodyFont: { size: 14, weight: 'bold' },
-                    displayColors: false
-                }
-            },
-            scales: {
-                y: { beginAtZero: true, grid: { color: gridColor, drawBorder: false }, ticks: { color: labelColor, stepSize: 1 } },
-                x: { grid: { display: false }, ticks: { color: labelColor, font: { weight: '600', size: window.innerWidth < 640 ? 10 : 12 } } }
-            }
-        }
-    });
-
+    // Event listener klik luar untuk menutup dropdown ekspor secara aman
     window.addEventListener('click', function(e) {
         const dropdown = document.getElementById('exportDropdownMenu');
         const trigger = document.getElementById('btnDropdownTrigger');
@@ -425,5 +381,69 @@ function handleSelectProdiLoading(selectElement) {
         isModalOpen = false;
     }, 20000);
 }
+</script>
+{{-- SCRIPT RENDERING CHART --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById('kinerjaChart').getContext('2d');
+
+        // Memuat data array label hari dan daftar dataset prodi langsung dari Controller
+        const chartLabels = {!! json_encode($labels) !!};
+        const chartDatasets = {!! json_encode($chartDatasets) !!};
+
+        // Deteksi mode gelap untuk penyesuaian warna teks grid grafik
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        const textColor = isDarkMode ? '#94a3b8' : '#64748b';
+        const gridColor = isDarkMode ? 'rgba(148, 163, 184, 0.1)' : 'rgba(100, 116, 139, 0.05)';
+
+        new Chart(ctx, {
+            type: 'bar', // Menggunakan tipe Bar Chart Grouped/Side-by-Side
+            data: {
+                labels: chartLabels,
+                datasets: chartDatasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom', // Posisi legend di bawah sesuai dengan mockup gambar Anda
+                        labels: {
+                            color: textColor,
+                            font: { family: 'Plus Jakarta Sans, sans-serif', weight: '600', size: 11 },
+                            boxWidth: 10,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        padding: 12,
+                        backgroundColor: isDarkMode ? '#1e293b' : '#0f172a',
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: false, // Diubah menjadi false agar bar tampil berdampingan per prodi
+                        grid: { display: false },
+                        ticks: { color: textColor, font: { size: 11 } }
+                    },
+                    y: {
+                        stacked: false, // Diubah menjadi false
+                        grid: { color: gridColor },
+                        ticks: { 
+                            color: textColor, 
+                            font: { size: 11 },
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    });
 </script>
 @endsection

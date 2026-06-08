@@ -736,109 +736,306 @@ public function checkNotifications()
     ]);
 }
 
-    public function laporan(Request $request)
-    {
-        $user = $this->getSessionUser();
-        if (!$user) return redirect('/login');
+public function laporan(Request $request)
+{
+    $user = $this->getSessionUser();
+    if (!$user) return redirect('/login');
 
-        $db = $this->readMultipleSheets([
-            'kunjungan',
-            'master_prodi_instansi'
-        ]);
+    // 1. Memuat seluruh sheet data yang dibutuhkan untuk 5 jenis laporan
+    $db = $this->readMultipleSheets([
+        'kunjungan',
+        'pengunjung',
+        'master_prodi_instansi',
+        'master_keperluan',
+        'survey'
+    ]);
 
-        $user->prodi = $db['master_prodi_instansi']
-            ->firstWhere('id',$user->prodi_id);
+    $user->prodi = $db['master_prodi_instansi']
+        ->firstWhere('id', $user->prodi_id);
 
-        $daftar_prodi = $db['master_prodi_instansi']
-            ->where('jenis','Prodi')
+    $daftar_prodi = $db['master_prodi_instansi']
+        ->where('jenis', 'Prodi')
+        ->values();
+        
+    $query = $this->applyAccessFilter($db['kunjungan'], $user);
+
+    // FILTER PRODI
+    if(request()->filled('prodi_id')){
+        $query = $query
+            ->where('prodi_id', request('prodi_id'))
             ->values();
-        $query = $this->applyAccessFilter($db['kunjungan'], $user);
+    }
 
-        // FILTER PRODI
-        if(request()->filled('prodi_id')){
+    $startDate = $request->input('start_date');
+    $endDate = $request->input('end_date');
 
-            $query=$query
-                ->where('prodi_id',request('prodi_id'))
-                ->values();
-        }
-
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        if ($startDate && $endDate) {
-            $start = Carbon::parse($startDate)->startOfDay();
-            $end = Carbon::parse($endDate)->endOfDay();
-            $query = $query->filter(function($k) use ($start, $end) {
-                $date = Carbon::parse($k->created_at);
-                return $date->gte($start) && $date->lte($end);
-            });
-        }
-
-        $totalSelesai = $query->where('status_layanan', 'Selesai')->count();
-        $totalKunjungan = $query->count();
-        $totalDitolak = $query->where('status_layanan', 'Ditolak')->count();
-        $tingkatPenolakan = $totalKunjungan > 0 ? round(($totalDitolak / $totalKunjungan) * 100, 1) : 0;
-
-        $kunjunganSelesai = $query->filter(function($k){
-            return $k->status_layanan == 'Selesai'
-                && !empty($k->waktu_mulai_layanan)
-                && !empty($k->waktu_selesai_layanan);
+    // Filter Tanggal Utama (Carbon)
+    if ($startDate && $endDate) {
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->endOfDay();
+        $query = $query->filter(function($k) use ($start, $end) {
+            $date = Carbon::parse($k->created_at);
+            return $date->gte($start) && $date->lte($end);
         });
+    }
 
-        $totalDetik = 0;
+    // Perhitungan Statistik Utama
+    $totalSelesai = $query->where('status_layanan', 'Selesai')->count();
+    $totalKunjungan = $query->count();
+    $totalDitolak = $query->where('status_layanan', 'Ditolak')->count();
+    $tingkatPenolakan = $totalKunjungan > 0 ? round(($totalDitolak / $totalKunjungan) * 100, 1) : 0;
 
-        foreach($kunjunganSelesai as $k){
+    $kunjunganSelesai = $query->filter(function($k){
+        return $k->status_layanan == 'Selesai'
+            && !empty($k->waktu_mulai_layanan)
+            && !empty($k->waktu_selesai_layanan);
+    });
 
-            $totalDetik += Carbon::parse($k->waktu_mulai_layanan)
-                ->diffInSeconds(
-                    Carbon::parse($k->waktu_selesai_layanan)
-                );
-        }
+    $totalDetik = 0;
+    foreach($kunjunganSelesai as $k){
+        $totalDetik += Carbon::parse($k->waktu_mulai_layanan)
+            ->diffInSeconds(Carbon::parse($k->waktu_selesai_layanan));
+    }
 
-        $rataDetik = $kunjunganSelesai->count() > 0
-            ? round($totalDetik / $kunjunganSelesai->count())
-            : 0;
+    $rataDetik = $kunjunganSelesai->count() > 0
+        ? round($totalDetik / $kunjunganSelesai->count())
+        : 0;
 
-        $menit = floor($rataDetik / 60);
+    $menit = floor($rataDetik / 60);
+    $detik = $rataDetik % 60;
+    $rataRataSla = $menit.' menit '.$detik.' detik';
 
-        $detik = $rataDetik % 60;
+    // ==========================================
+    // PROSES GENERASI 5 LAPORAN DATA (CORETAN PROJEK)
+    // ==========================================
 
-        $rataRataSla = $menit.' menit '.$detik.' detik';
+    // 1. LAPORAN PENGUNJUNG
+    $pengunjungFiltered = $db['pengunjung'];
+    if ($startDate && $endDate) {
+        $pengunjungFiltered = $pengunjungFiltered->filter(function($p) use ($start, $end) {
+            if (empty($p->created_at)) return false;
+            $date = Carbon::parse($p->created_at);
+            return $date->gte($start) && $date->lte($end);
+        });
+    }
+    $laporanPengunjung = $pengunjungFiltered->map(function($item) {
+        return [
+            'nama'          => $item->nama_lengkap ?? '-',
+            'identitas_no'  => $item->identitas_no ?? '-', 
+            'no_telepon'    => $item->no_telepon ?? '-',
+            'asal_instansi' => $item->asal_instansi ?? '-',
+            'tanggal_masuk' => isset($item->created_at) ? date('Y-m-d', strtotime($item->created_at)) : '-',
+        ];
+    })->values();
 
-        $grafikKinerja = ['Sen' => 0, 'Sel' => 0, 'Rab' => 0, 'Kam' => 0, 'Jum' => 0, 'Sab' => 0, 'Min' => 0];
-        $hariMap = [2 => 'Sen', 3 => 'Sel', 4 => 'Rab', 5 => 'Kam', 6 => 'Jum', 7 => 'Sab', 1 => 'Min'];
+    // 2. LAPORAN KUNJUNGAN
+    $laporanKunjungan = $query->map(function($item) use ($db) {
+        $pengunjung = $db['pengunjung']->firstWhere('id', $item->pengunjung_id);
+        $prodi = $db['master_prodi_instansi']->firstWhere('id', $item->prodi_id);
+        $nama_prodi = $prodi->nama ?? $prodi->nama_prodi ?? '-';
+        $masterKeperluan = $db['master_keperluan']->firstWhere('id', $item->keperluan_id);
+        $keperluan_utama = $masterKeperluan->keterangan ?? 'Kunjungan Umum';
 
-        $grafikQuery = clone $kunjunganSelesai;
-        if (!$startDate || !$endDate) {
-            $awalMinggu = now()->startOfWeek();
-            $akhirMinggu = now()->endOfWeek();
-            $grafikQuery = $grafikQuery->filter(function($k) use ($awalMinggu, $akhirMinggu) {
-                $date = Carbon::parse($k->waktu_selesai_layanan);
-                return $date->between($awalMinggu, $akhirMinggu);
+        return [
+            'nomor_kunjungan'  => $item->nomor_kunjungan ?? '-',
+            'nama'             => $pengunjung->nama_lengkap ?? '-',
+            'prodi'            => $nama_prodi,
+            'status_layanan'   => $item->status_layanan ?? '-',
+            'keperluan_utama'  => $keperluan_utama,      
+            'keperluan_detail' => $item->keperluan ?? '-', 
+        ];
+    })->values();
+
+    // 3. LAPORAN KINERJA ADMIN
+    $laporanKinerja = $query->map(function($item) use ($db) {
+        $pengunjung = $db['pengunjung']->firstWhere('id', $item->pengunjung_id);
+        $nama_pengunjung = $pengunjung->nama_lengkap ?? null;
+
+        $skor_pelayanan = $item->skor_pelayanan ?? null;
+        $skor_total_survey = '-';
+
+        if (!empty($skor_pelayanan) && $nama_pengunjung) {
+            $survey = $db['survey']->first(function($srv) use ($item, $nama_pengunjung) {
+                return (isset($srv->kunjungan_id) && $srv->kunjungan_id == $item->id) 
+                       || (isset($srv->nama_lengkap) && $srv->nama_lengkap == $nama_pengunjung);
             });
+            $skor_total_survey = $survey->skor_total ?? '-';
         }
 
-        foreach ($grafikQuery as $data) {
-            $hariInt = Carbon::parse($data->waktu_selesai_layanan)->dayOfWeek;
-            $hariInt = $hariInt == 0 ? 1 : $hariInt + 1;
-            if(isset($hariMap[$hariInt])) {
-                $grafikKinerja[$hariMap[$hariInt]]++;
+        $waktu_pengerjaan = '-';
+        if (isset($item->estimasi_sla) && isset($item->satuan_sla)) {
+            $waktu_pengerjaan = $item->estimasi_sla . ' ' . $item->satuan_sla;
+        }
+
+        return [
+            'tanggal'           => isset($item->tanggal) ? date('Y-m-d', strtotime($item->tanggal)) : '-',
+            'status_sla'        => $item->status_sla ?? '-',
+            'skor_pelayanan'    => $skor_pelayanan ?? '-',
+            'skor_total_survey' => $skor_total_survey,
+            'waktu_pengerjaan'  => $waktu_pengerjaan,
+        ];
+    })->values();
+
+    // 4. LAPORAN PENOLAKAN
+    $laporanPenolakan = $query->filter(function($item) {
+        return isset($item->status_layanan) && strtolower($item->status_layanan) == 'ditolak';
+    })->map(function($item) use ($db) {
+        $pengunjung = $db['pengunjung']->firstWhere('id', $item->pengunjung_id);
+        $alasan_tolak = isset($item->alasan_tolak) ? ucwords(strtolower($item->alasan_tolak)) : '-';
+
+        return [
+            'nomor_kunjungan' => $item->nomor_kunjungan ?? '-',
+            'nama'            => $pengunjung->nama_lengkap ?? '-',
+            'asal_instansi'   => $pengunjung->asal_instansi ?? '-',
+            'no_telepon'      => $pengunjung->no_telepon ?? '-',
+            'alasan_penolakan'=> $alasan_tolak, 
+        ];
+    })->values();
+
+    // 5. LAPORAN ULASAN
+    $surveyFiltered = $db['survey'];
+    if ($startDate && $endDate) {
+        $surveyFiltered = $surveyFiltered->filter(function($s) use ($start, $end) {
+            $dateRaw = $s->created_at ?? $s->tanggal ?? null;
+            if (!$dateRaw) return false;
+            $date = Carbon::parse($dateRaw);
+            return $date->gte($start) && $date->lte($end);
+        });
+    }
+
+    Carbon::setLocale('id'); 
+    $laporanUlasan = $surveyFiltered->map(function($item, $index) {
+        $tanggal_raw = $item->created_at ?? $item->tanggal ?? null;
+        $hari = '-';
+        $tanggal = '-';
+
+        if ($tanggal_raw) {
+            $carbonDate = Carbon::parse($tanggal_raw);
+            $hari = $carbonDate->translatedFormat('l'); 
+            $tanggal = $carbonDate->format('Y-m-d');
+        }
+
+        $ulasan = '-';
+        if (!empty($item->kritik_saran)) {
+            if (trim($item->kritik_saran) !== '' && !preg_match('/^[\*]+$/', trim($item->kritik_saran))) {
+                $ulasan = ucwords(strtolower($item->kritik_saran));
             }
         }
 
-        return view('dashboard.laporan', [
-            'user' => $user,
-            'daftar_prodi'=>$daftar_prodi,
-            'judul_dashboard' => 'Laporan & Ekspor',
-            'totalSelesai' => $totalSelesai,
-            'tingkatPenolakan' => $tingkatPenolakan,
-            'rataRataSla' => $rataRataSla,
-            'labelGrafik' => array_keys($grafikKinerja),
-            'dataGrafik' => array_values($grafikKinerja),
-            'startDate' => $startDate,
-            'endDate' => $endDate
-        ]);
+        return [
+            'no'               => $index + 1,
+            'hari'             => $hari,
+            'tanggal'          => $tanggal,
+            'nilai_kepuasan'   => $item->skor_total ?? '-', 
+            'ulasan'           => $ulasan,
+        ];
+    })->values();
+
+// =========================================================================
+    // PERBAIKAN LOGIC GRAFIK PERBANDINGAN PER PRODI (SOLUSI FIX)
+    // =========================================================================
+    $labels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+    
+    // Mapping hari dari Carbon format bahasa Inggris / Angka ke label chart Anda
+    $hariMap = [
+        'Monday'    => 'Sen', 'Tuesday'  => 'Sel', 'Wednesday'=> 'Rab',
+        'Thursday'  => 'Kam', 'Friday'   => 'Jum', 'Saturday' => 'Sab',
+        'Sunday'    => 'Min',
+        'Senin'     => 'Sen', 'Selasa'   => 'Sel', 'Rabu'     => 'Rab',
+        'Kamis'     => 'Kam', 'Jumat'    => 'Jum', 'Sabtu'    => 'Sab',
+        'Minggu'    => 'Min'
+    ];
+
+    // Ambil data filter prodi yang sedang aktif
+    $filteredProdiId = request('prodi_id');
+    $prodisForChart = $filteredProdiId 
+        ? $daftar_prodi->where('id', $filteredProdiId) 
+        : $daftar_prodi;
+
+    // Palet warna premium untuk chart
+    $colors = [
+        '#3b82f6', // Biru
+        '#a855f7', // Ungu
+        '#f59e0b', // Orange
+        '#10b981', // Emerald
+        '#ec4899', // Pink
+    ];
+
+    $chartDatasets = [];
+    $colorIndex = 0;
+
+    // FIX: Gunakan basis $query utama (bukan $kunjunganSelesai yang terlalu ketat)
+    $grafikQuery = clone $query; 
+
+    // Jika user TIDAK memilih filter tanggal, jangan dikunci pakai startOfWeek() 
+    // agar data historis tetap muncul di grafik chart, atau sesuaikan range-nya.
+    if ($startDate && $endDate) {
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->endOfDay();
+        $grafikQuery = $grafikQuery->filter(function($k) use ($start, $end) {
+            if (empty($k->created_at)) return false;
+            $date = Carbon::parse($k->created_at);
+            return $date->gte($start) && $date->lte($end);
+        });
     }
+
+    // Olah data per prodi ke bentuk dataset Chart.js
+    foreach ($prodisForChart as $prodi) {
+        $prodiName = $prodi->nama ?? $prodi->nama_prodi ?? '-';
+        $prodiData = ['Sen' => 0, 'Sel' => 0, 'Rab' => 0, 'Kam' => 0, 'Jum' => 0, 'Sab' => 0, 'Min' => 0];
+
+        // Hitung data kunjungan milik prodi ini
+        $kunjunganProdi = $grafikQuery->where('prodi_id', $prodi->id);
+
+        foreach ($kunjunganProdi as $data) {
+            // Ambil fallback dari kolom hari_kunjungan jika waktu_selesai_layanan kosong
+            if (!empty($data->hari_kunjungan)) {
+                $hariTeksRaw = ucwords(strtolower(trim($data->hari_kunjungan))); // Contoh: "Friday" atau "Jumat"
+            } else {
+                $hariTeksRaw = Carbon::parse($data->created_at ?? now())->format('l'); // Contoh: "Friday"
+            }
+
+            // Masukkan ke dalam map grafik jika cocok
+            if (isset($hariMap[$hariTeksRaw])) {
+                $hariTeks = $hariMap[$hariTeksRaw];
+                $prodiData[$hariTeks]++;
+            }
+        }
+
+        $chartDatasets[] = [
+            'label'           => $prodiName,
+            'data'            => array_values($prodiData),
+            'backgroundColor' => $colors[$colorIndex % count($colors)],
+            'borderRadius'    => 6,
+            'borderSkipped'   => false,
+            'barThickness'    => 14
+        ];
+
+        $colorIndex++;
+    }
+
+    // Kirimkan variabel baru ke View
+return view('dashboard.laporan', [
+    'user'              => $user,
+    'daftar_prodi'      => $daftar_prodi,
+    'judul_dashboard'   => 'Laporan & Ekspor',
+    'totalSelesai'      => $totalSelesai,
+    'tingkatPenolakan'  => $tingkatPenolakan,
+    'rataRataSla'       => $rataRataSla,
+    'startDate'         => $startDate,
+    'endDate'           => $endDate,
+    
+    // Pastikan dua baris ini ada dan tidak typo:
+    'labels'            => $labels,
+    'chartDatasets'     => $chartDatasets,
+    
+    'laporanPengunjung' => $laporanPengunjung,
+    'laporanKunjungan'  => $laporanKunjungan,
+    'laporanKinerja'    => $laporanKinerja,
+    'laporanPenolakan'  => $laporanPenolakan,
+    'laporanUlasan'     => $laporanUlasan
+]);
+}
 private function exportLaporan($action, Request $request)
 {
     $user = $this->getSessionUser();
