@@ -105,6 +105,11 @@
         .dark .glass {
             background: rgba(15, 23, 42, 0.8);
         }
+        .swal2-backdrop-show {
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+        }
     </style>
 </head>
 

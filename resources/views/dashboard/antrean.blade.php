@@ -1,4 +1,11 @@
 @extends('layouts.app')
+<style>
+    .swal2-backdrop-show {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+}
+</style>
 
 @section('title', 'Manajemen Antrean')
 
@@ -297,7 +304,10 @@
                                     @endif
 
                                     @if($k->is_forwarded && !$k->is_email_sent)
-                                        <button type="button" onclick="alert('Data sudah diteruskan ke pimpinan.\n\nAdmin wajib mengirim email konfirmasi ulang.')" class="w-9 h-9 flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-500 dark:hover:bg-amber-600 hover:text-white transition-all shadow-sm" title="Wajib Email Konfirmasi">
+                                        <button type="button" 
+                                                onclick="peringatanEmailWajib('{{ $k->id }}', '{{ addslashes($k->pengunjung->nama_lengkap ?? 'Umum') }}', '{{ addslashes($k->keperluan ?? '-') }}')" 
+                                                class="w-9 h-9 flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-500 dark:hover:bg-amber-600 hover:text-white transition-all shadow-sm" 
+                                                title="Wajib Email Konfirmasi">
                                             <i class="fa-solid fa-triangle-exclamation text-xs"></i>
                                         </button>
                                     @endif
@@ -883,6 +893,46 @@ function handleResetLoading() {
     if (typeof showGlobalLoading === 'function') {
         showGlobalLoading("Membersihkan filter dan memuat ulang data...");
     }
+}
+function peringatanEmailWajib(id, nama, keperluan) {
+    const isDarkMode = document.documentElement.classList.contains('dark');
+
+    Swal.fire({
+        title: 'Email Belum Terkirim!',
+        text: `Data kunjungan atas nama "${nama}" sudah diteruskan ke pimpinan, namun email konfirmasi belum dikirim. Harap buka form email sekarang.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Buka Form Email',
+        cancelButtonText: 'Nanti Saja',
+        
+        background: isDarkMode ? '#1e293b' : '#ffffff',
+        color: isDarkMode ? '#f8fafc' : '#1f2937',
+        confirmButtonColor: '#f59e0b', 
+        cancelButtonColor: isDarkMode ? '#475569' : '#94a3b8',
+
+        backdrop: `
+            rgba(15, 23, 42, 0.3)
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        `,
+
+        customClass: {
+            popup: 'rounded-[2rem] shadow-2xl border border-gray-100 dark:border-slate-700 p-6',
+            title: 'font-black text-xl tracking-tight text-amber-600 dark:text-amber-400',
+            htmlContainer: 'text-sm text-gray-500 dark:text-gray-400 mt-2',
+            confirmButton: 'rounded-xl font-bold text-sm px-5 py-2.5',
+            cancelButton: 'rounded-xl font-bold text-sm px-5 py-2.5'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Memastikan fungsi pembuka modal utama Anda dipanggil dengan parameter yang sama
+            if (typeof bukaModalEmail === 'function') {
+                bukaModalEmail(id, nama, keperluan);
+            } else {
+                alert('Fungsi bukaModalEmail tidak ditemukan!');
+            }
+        }
+    });
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

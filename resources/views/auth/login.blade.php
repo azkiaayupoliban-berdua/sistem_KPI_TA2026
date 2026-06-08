@@ -39,6 +39,12 @@
             color: #93c5fd;
             background-color: rgba(59, 130, 246, 0.15);
         }
+    .swal2-backdrop-show {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+}
+
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8 transition-colors duration-300">

@@ -63,6 +63,11 @@
         .dark .star-rating label:hover ~ label {
             color: #fbbf24;
         }
+        .swal2-backdrop-show {
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 bg-[#F1F5F9] text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300">

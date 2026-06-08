@@ -1,5 +1,13 @@
 @extends('layouts.app')
 
+<style>
+    .swal2-backdrop-show {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+}
+</style>
+
 @section('title', $judul_dashboard)
 
 @section('content')
@@ -658,11 +666,88 @@ let isModalOpen = false;
         isModalOpen = false;
     }
 
-    function konfirmasiSelesai(id, nomor) {
-        if (confirm(`Apakah Anda yakin ingin menyelesaikan antrean nomor ${nomor}?`)) {
-            document.getElementById(`form-selesai-${id}`).submit();
+    // ==========================================
+// UTILITY: POP-UP LOADING GLOBAL & LOCK (Bisa di-blur)
+// ==========================================
+function showGlobalLoading(pesanText = "Sedang memproses data, mohon tunggu...") {
+    const isDarkMode = document.documentElement.classList.contains('dark');
+
+    window.onclick = null;
+
+    Swal.fire({
+        title: 'Memproses Data',
+        text: pesanText,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        allowEnterKey: false,
+        showConfirmButton: false,
+        background: isDarkMode ? '#1e293b' : '#ffffff',
+        color: isDarkMode ? '#f8fafc' : '#1f2937',
+        
+        // EFEK BLUR DI LATAR BELAKANG (Backdrop Blur)
+        backdrop: `
+            rgba(15, 23, 42, 0.3)
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        `,
+        
+        customClass: {
+            popup: 'rounded-[2rem] shadow-2xl border border-gray-100 dark:border-slate-700 p-8',
+            title: 'font-black text-xl tracking-tight',
+            htmlContainer: 'text-sm text-gray-500 dark:text-gray-400 mt-2'
+        },
+        didOpen: () => {
+            Swal.showLoading();
         }
-    }
+    });
+}
+
+// ==========================================
+// KONFIRMASI SELESAI (Bisa di-blur)
+// ==========================================
+function konfirmasiSelesai(id, nomor) {
+    const form = document.getElementById(`form-selesai-${id}`);
+    if (!form) return;
+
+    const isDarkMode = document.documentElement.classList.contains('dark');
+
+    Swal.fire({
+        title: 'Selesaikan Layanan?',
+        text: `Apakah Anda yakin ingin menyelesaikan antrean nomor ${nomor}? Pastikan pelayanan telah selesai dikerjakan.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Selesai',
+        cancelButtonText: 'Batal',
+
+        background: isDarkMode ? '#1e293b' : '#ffffff',
+        color: isDarkMode ? '#f8fafc' : '#1f2937',
+        confirmButtonColor: '#10b981', 
+        cancelButtonColor: isDarkMode ? '#475569' : '#94a3b8',
+
+        // EFEK BLUR DI LATAR BELAKANG (Backdrop Blur)
+        backdrop: `
+            rgba(15, 23, 42, 0.2)
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        `,
+
+        customClass: {
+            popup: 'rounded-[2rem] shadow-2xl border border-gray-100 dark:border-slate-700 p-6',
+            title: 'font-black text-xl tracking-tight',
+            htmlContainer: 'text-sm text-gray-500 dark:text-gray-400 mt-2',
+            confirmButton: 'rounded-xl font-bold text-sm px-5 py-2.5',
+            cancelButton: 'rounded-xl font-bold text-sm px-5 py-2.5'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Panggil fungsi pop-up loading global yang sudah di-blur di atas
+            if (typeof showGlobalLoading === 'function') {
+                showGlobalLoading("Sedang memperbarui status layanan menjadi selesai...");
+            }
+            form.submit();
+        }
+    });
+}
 
     // ====================================================================================
     // PERBAIKAN AMAN: MERAPIKAN STRUKTUR SUBMIT FORM ESTIMASI TANPA MENGHAPUS LOGIKA KODE

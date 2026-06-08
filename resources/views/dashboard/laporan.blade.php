@@ -1,4 +1,11 @@
 @extends('layouts.app')
+<style>
+    .swal2-backdrop-show {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+}
+</style>
 
 @section('content')
 <div class="px-4 sm:px-8 py-6 max-w-7xl mx-auto text-slate-800 dark:text-slate-100 transition-colors duration-300">

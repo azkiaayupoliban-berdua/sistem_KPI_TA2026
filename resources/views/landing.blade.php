@@ -39,6 +39,11 @@
             opacity: 0;
             animation: fadeInUp 0.6s ease-out forwards;
         }
+        .swal2-backdrop-show {
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+        }
     </style>
 </head>
 <body class="bg-[#F8FAFC] dark:bg-slate-950 min-h-screen flex flex-col text-slate-800 dark:text-slate-100 relative transition-colors duration-300" style="background-image: url('{{ asset('img/bg-poliban.jpg') }}'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
