@@ -211,57 +211,71 @@
                         @endif
                     </div>
 
-                    {{-- FOOTER BUTTONS --}}
-                    <div class="mt-auto flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+{{-- FOOTER BUTTONS --}}
+<div class="mt-auto flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+    @if ($user->role_id == 2)
+        <div class="flex items-center gap-2 w-full">
+            @if($isAntre)
+                <div class="flex flex-row items-center gap-2 w-full">
+                    {{-- TOMBOL MULAI --}}
+                    <button type="button" onclick="bukaModalProses('{{ $k->nomor_kunjungan }}')"
+                        class="flex-1 h-9 px-3 sm:px-4 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-sm active:scale-[0.98]">
+                        <i class="fa-solid fa-play text-[10px] pl-0.5"></i>
+                        <span class="text-[11px] font-black uppercase tracking-wider">Mulai</span>
+                    </button>
 
-                        <div class="flex items-center gap-2 w-full">
-                            @if($isAntre)
-                                <div class="flex flex-row items-center gap-2 w-full">
-                                    <button type="button" onclick="bukaModalProses('{{ $k->nomor_kunjungan }}')"
-                                        class="flex-1 h-9 px-3 sm:px-4 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-sm active:scale-[0.98]">
-                                        <i class="fa-solid fa-play text-[10px] pl-0.5"></i>
-                                        <span class="text-[11px] font-black uppercase tracking-wider">Mulai</span>
-                                    </button>
+                    {{-- TOMBOL TOLAK --}}
+                    <button type="button" onclick="bukaModalTolak('{{ $k->id }}')"
+                        class="flex-1 h-9 px-3 sm:px-4 flex items-center justify-center gap-1.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500 dark:hover:bg-rose-600 hover:text-white dark:hover:text-white rounded-xl transition-all active:scale-[0.98]">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                        <span class="text-[11px] font-black uppercase tracking-wider">Tolak</span>
+                    </button>
+                </div>
+            @elseif($isDiproses)
+                {{-- TOMBOL SELESAI --}}
+                <form id="form-selesai-{{ $k->id }}" action="{{ route('kunjungan.selesai', $k->id) }}" method="POST" class="inline-block">
+                    @csrf
+                    <button type="button" onclick="konfirmasiSelesai('{{ $k->id }}', '{{ $k->nomor_kunjungan }}')" title="Selesaikan Antrean"
+                        class="w-9 h-9 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all shadow-sm active:scale-95 shrink-0">
+                        <i class="fa-solid fa-check text-sm"></i>
+                    </button>
+                </form>
+            @elseif($isSelesai)
+                {{-- BADGE SELESAI --}}
+                <div title="Selesai" class="w-9 h-9 flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 rounded-full shrink-0">
+                    <i class="fa-solid fa-check-double text-xs"></i>
+                </div>
+            @endif
+        </div>
 
-                                    <button type="button" onclick="bukaModalTolak('{{ $k->id }}')"
-                                        class="flex-1 h-9 px-3 sm:px-4 flex items-center justify-center gap-1.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500 dark:hover:bg-rose-600 hover:text-white dark:hover:text-white rounded-xl transition-all active:scale-[0.98]">
-                                        <i class="fa-solid fa-xmark text-xs"></i>
-                                        <span class="text-[11px] font-black uppercase tracking-wider">Tolak</span>
-                                    </button>
-                                </div>
-                            @elseif($isDiproses)
-                                <form id="form-selesai-{{ $k->id }}" action="{{ route('kunjungan.selesai', $k->id) }}" method="POST" class="inline-block">
-                                    @csrf
-                                    <button type="button" onclick="konfirmasiSelesai('{{ $k->id }}', '{{ $k->nomor_kunjungan }}')" title="Selesaikan Antrean"
-                                        class="w-9 h-9 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all shadow-sm active:scale-95 shrink-0">
-                                        <i class="fa-solid fa-check text-sm"></i>
-                                    </button>
-                                </form>
-                            @elseif($isSelesai)
-                                <div title="Selesai" class="w-9 h-9 flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 rounded-full shrink-0">
-                                    <i class="fa-solid fa-check-double text-xs"></i>
-                                </div>
-                            @endif
-                        </div>
+        {{-- FITUR TAMBAHAN SETELAH SELESAI (KIRIM EMAIL & TERUSKAN) --}}
+        <div class="flex items-center gap-2">
+            @if($isSelesai)
+                <form action="{{ route('kunjungan.kirim-email', ['id' => $k->id]) }}" method="POST" class="inline-block">
+                    @csrf
+                    <button type="submit" title="Kirim Email" class="w-9 h-9 flex items-center justify-center bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900 text-sky-600 dark:text-sky-400 rounded-full transition-all active:scale-95 shrink-0">
+                        <i class="fa-regular fa-envelope text-sm"></i>
+                    </button>
+                </form>
 
-                        <div class="flex items-center gap-2">
-                            @if($isSelesai)
-                                <form action="{{ route('kunjungan.kirim-email', ['id' => $k->id]) }}" method="POST" class="inline-block">
-                                    @csrf
-                                    <button type="submit" title="Kirim Email" class="w-9 h-9 flex items-center justify-center bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900 text-sky-600 dark:text-sky-400 rounded-full transition-all active:scale-95 shrink-0">
-                                        <i class="fa-regular fa-envelope text-sm"></i>
-                                    </button>
-                                </form>
-
-                                <form action="{{ route('kunjungan.tanggapan', $k->id) }}" method="POST" class="inline-block">
-                                    @csrf
-                                    <button type="submit" title="Teruskan ke Pimpinan" class="w-9 h-9 flex items-center justify-center bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900 text-amber-600 dark:text-amber-400 rounded-full transition-all active:scale-95 shrink-0">
-                                        <i class="fa-solid fa-share-nodes text-sm"></i>
-                                    </button>
-                                </form>
-                            @endif
-                        </div>
-                    </div>
+                <form action="{{ route('kunjungan.tanggapan', $k->id) }}" method="POST" class="inline-block">
+                    @csrf
+                    <button type="submit" title="Teruskan ke Pimpinan" class="w-9 h-9 flex items-center justify-center bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900 text-amber-600 dark:text-amber-400 rounded-full transition-all active:scale-95 shrink-0">
+                        <i class="fa-solid fa-share-nodes text-sm"></i>
+                    </button>
+                </form>
+            @endif
+        </div>
+    @else
+        {{-- TAMPILAN READ-ONLY UNTUK SUPER ADMIN / LAINNYA (DENGAN TAMPILAN TAILWIND) --}}
+        <div class="flex items-center justify-center w-full py-1">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/50 w-full justify-center">
+                <i class="fa-solid fa-eye text-[11px]"></i>
+                (Read-Only)
+            </span>
+        </div>
+    @endif
+</div>
                 </div>
             </div>
 
