@@ -92,10 +92,12 @@
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sistem Online Beroperasi
                 </div>
 
-                <h1 class="text-4xl lg:text-6xl font-extrabold leading-[1.1] mb-6 text-slate-900 dark:text-white tracking-tight">
-                    Layanan Publik <br class="hidden lg:inline">
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#002B5B] to-blue-600 dark:from-blue-400 dark:to-purple-400">Jurusan Teknik Elektro</span>
-                </h1>
+<h1 class="text-4xl lg:text-6xl font-extrabold leading-[1.1] mb-6 text-slate-900 dark:text-white tracking-tight">
+    SIPANDU-KPI <br class="hidden lg:inline">
+    <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#002B5B] to-blue-600 dark:from-blue-400 dark:to-purple-400">
+        JURUSAN TEKNIK ELEKTRO
+    </span>
+</h1>
 
                 <p class="text-slate-600 dark:text-slate-400 mb-10 text-base lg:text-lg leading-relaxed max-w-md">
                     Dapatkan nomor antrean Anda sekarang dan pantau estimasi waktu (SLA) secara real-time.
