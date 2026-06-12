@@ -1,10 +1,10 @@
 @extends('layouts.app')
 <style>
     .swal2-backdrop-show {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-    background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
-}
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+    }
 </style>
 
 @section('title', 'Sistem Control Panel')
@@ -94,9 +94,12 @@
                         <button onclick="openUserModal({{ json_encode($u) }})" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 hover:border-amber-500/30">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <form action="{{ route('control-panel.user.destroy', data_get($u, 'id')) }}" method="POST" onsubmit="return confirm('Hapus user ini dari Google Sheets?') && showLoadingOverlay();" class="inline">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 hover:border-red-500/30">
+                        
+                        {{-- Form Menggunakan Class Khusus agar Dapat Ditangkap JavaScript SweetAlert --}}
+                        <form action="{{ route('control-panel.user.destroy', data_get($u, 'id')) }}" method="POST" class="delete-user-form inline">
+                            @csrf 
+                            @method('DELETE')
+                            <button type="button" onclick="konfirmasiHapusUser(this)" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 hover:border-red-500/30">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </form>
@@ -130,10 +133,11 @@
                     @foreach($data_keperluan as $k)
                     <div class="flex items-center gap-2 pl-4 pr-2 py-2 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-200/70 dark:border-slate-700/80 transition-all group">
                         <span class="font-bold text-xs sm:text-sm">{{ $k->keterangan }}</span>
-                        <form action="{{ route('keperluan.destroy', $k->id) }}" method="POST" onsubmit="showLoadingOverlay()" class="inline">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="w-6 h-6 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 shadow-sm dark:shadow-none hover:shadow-md transition-all">
-                                <i class="fa-solid fa-xmark text-[10px]"></i>
+                        <form action="{{ route('control-panel.user.destroy', data_get($u, 'id')) }}" method="POST" class="delete-user-form inline">
+                            @csrf 
+                            @method('DELETE')
+                            <button type="button" onclick="konfirmasiHapusUser(this)" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 hover:border-red-500/30">
+                                <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </form>
                     </div>
@@ -248,7 +252,7 @@
 
 {{-- LOGIKA JAVASCRIPT UNTUK MODAL & LOCK SCREEN --}}
 <script>
-function openUserModal(user = null) {
+    function openUserModal(user = null) {
         const modal = document.getElementById('userModal');
         const content = document.getElementById('userModalContent');
         const form = document.getElementById('modalUserForm');
@@ -339,6 +343,43 @@ function openUserModal(user = null) {
             stopAutoRefreshEngine();
         }
         return true;
+    }
+</script>
+
+{{-- INJECT CDN SWEETALERT2 & LOGIKA JUGA DISINKRONKAN DENGAN BLUR CSS NYA --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function konfirmasiHapusUser(buttonElement) {
+        const isDark = document.documentElement.classList.contains('dark');
+
+        Swal.fire({
+            title: 'Hapus Pengantar / User?',
+            text: "Data ini juga akan dihapus secara permanen dari Google Sheets!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444', 
+            cancelButtonColor: isDark ? '#475569' : '#94a3b8', 
+            confirmButtonText: 'Ya, Hapus Data',
+            cancelButtonText: 'Batal',
+            background: isDark ? '#1e293b' : '#ffffff', 
+            color: isDark ? '#f8fafc' : '#1e293b',
+            iconColor: '#ef4444',
+            customClass: {
+                popup: 'rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-xl',
+                title: 'font-black tracking-tight text-xl pt-2',
+                htmlContainer: 'text-sm font-medium opacity-80',
+                confirmButton: 'rounded-xl font-bold px-5 py-2.5 text-sm mx-1',
+                cancelButton: 'rounded-xl font-bold px-5 py-2.5 text-sm text-gray-700 dark:text-gray-200 mx-1'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Berjalan beriringan, memunculkan loading spinner orisinil sistem Anda
+                showLoadingOverlay();
+                
+                // Submit form pembuang data sheets yang membungkus button ini
+                buttonElement.closest('.delete-user-form').submit();
+            }
+        });
     }
 </script>
 @endsection
