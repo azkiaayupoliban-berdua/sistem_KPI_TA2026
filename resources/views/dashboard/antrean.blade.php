@@ -284,18 +284,20 @@
                                     <i class="fa-solid fa-eye text-[10px] md:text-xs"></i>
                                 </a>
 
-                                @if($user->role_id == 2)
-                                    @if($k->status_layanan != 'Selesai' && !$k->is_email_sent)
-                                        <button type="button" {{ $layananBelumDimulai ? 'disabled' : '' }} onclick="bukaModalEmail('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}', '{{ addslashes($k->keperluan) }}')" class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all {{ $layananBelumDimulai ? 'bg-gray-100 dark:bg-slate-700 text-gray-300 dark:text-slate-500 cursor-not-allowed' : 'bg-blue-50 dark:bg-blue-950/30 text-blue-500 dark:text-blue-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white' }}" title="{{ $layananBelumDimulai ? 'Mulai layanan terlebih dahulu' : 'Kirim Email ke Pimpinan' }}">
-                                            <i class="fa-solid fa-envelope text-xs"></i>
-                                        </button>
-                                    @endif
+                               @if($user->role_id == 2)
+    {{-- TOMBOL EMAIL: Hanya muncul jika status BUKAN Selesai DAN BUKAN Ditolak --}}
+    @if($k->status_layanan != 'Selesai' && $k->status_layanan != 'Ditolak' && !$k->is_email_sent)
+        <button type="button" {{ $layananBelumDimulai ? 'disabled' : '' }} onclick="bukaModalEmail('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}', '{{ addslashes($k->keperluan) }}')" class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all {{ $layananBelumDimulai ? 'bg-gray-100 dark:bg-slate-700 text-gray-300 dark:text-slate-500 cursor-not-allowed' : 'bg-blue-50 dark:bg-blue-950/30 text-blue-500 dark:text-blue-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white' }}" title="{{ $layananBelumDimulai ? 'Mulai layanan terlebih dahulu' : 'Kirim Email ke Pimpinan' }}">
+            <i class="fa-solid fa-envelope text-xs"></i>
+        </button>
+    @endif
 
-                                    @if($k->status_layanan != 'Selesai' && !$k->is_forwarded)
-                                        <button type="button" {{ $layananBelumDimulai ? 'disabled' : '' }} onclick="bukaModalForward('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}')" class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all {{ $layananBelumDimulai ? 'bg-gray-100 dark:bg-slate-700 text-gray-300 dark:text-slate-500 cursor-not-allowed' : 'bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 hover:bg-violet-600 dark:hover:bg-violet-500 hover:text-white' }}" title="{{ $layananBelumDimulai ? 'Mulai layanan terlebih dahulu' : 'Teruskan ke Pimpinan' }}">
-                                            <i class="fa-solid fa-share-nodes text-xs"></i>
-                                        </button>
-                                    @endif
+    {{-- TOMBOL TERUSKAN: Hanya muncul jika status BUKAN Selesai DAN BUKAN Ditolak --}}
+    @if($k->status_layanan != 'Selesai' && $k->status_layanan != 'Ditolak' && !$k->is_forwarded)
+        <button type="button" {{ $layananBelumDimulai ? 'disabled' : '' }} onclick="bukaModalForward('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}')" class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all {{ $layananBelumDimulai ? 'bg-gray-100 dark:bg-slate-700 text-gray-300 dark:text-slate-500 cursor-not-allowed' : 'bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 hover:bg-violet-600 dark:hover:bg-violet-500 hover:text-white' }}" title="{{ $layananBelumDimulai ? 'Mulai layanan terlebih dahulu' : 'Teruskan ke Pimpinan' }}">
+            <i class="fa-solid fa-share-nodes text-xs"></i>
+        </button>
+    @endif
 
                                     @if($k->is_forwarded && !$k->is_email_sent)
                                         <button type="button" 
