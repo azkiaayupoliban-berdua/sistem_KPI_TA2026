@@ -45,7 +45,6 @@
         </div>
 
 {{-- FORM PENCARIAN DAN FILTER --}}
-{{-- UPDATE: Menambahkan event handler onsubmit untuk memicu efek loading beku --}}
 <form action="{{ url()->current() }}" method="GET" onsubmit="handleCariLoading(event, this)" class="w-full lg:w-auto flex flex-col sm:flex-row gap-3 items-center">
     @php
         $isSuper = $user->role_id == 1 || $user->role_id == 3;
@@ -53,7 +52,6 @@
 
     {{-- Filter Prodi dengan Validasi Role Admin/Petugas --}}
     <div class="w-full sm:w-64 relative">
-        {{-- UPDATE: Jika select onchange dipicu, layar juga akan dikunci otomatis lewat pemicu manual --}}
         <select name="prodi_id"
             onchange="handleSelectProdiLoading(this)"
             {{ !$isSuper ? 'disabled' : '' }}
@@ -98,7 +96,6 @@
     </div>
 
     {{-- Tombol Submit Cari --}}
-    {{-- UPDATE: Menambahkan id="btnSubmitCari", disabled styling Tailwind, dan elemen <span> pembungkus teks --}}
     <button type="submit" id="btnSubmitCari"
     class="w-full sm:w-auto bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed shadow-blue-900/30">
     <i class="fa-solid fa-magnifying-glass mr-2"></i>
@@ -138,31 +135,28 @@
         </div>
         <div>
             <p class="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Selesai</p>
-            {{-- Menggunakan query status_layanan --}}
             <h4 class="text-xl font-black text-gray-800 dark:text-white">{{ count($data_kunjungan->where('status_layanan', 'Selesai')) }}</h4>
         </div>
     </div>
 
-    {{-- CARD: DITOLAK (FIXED) --}}
+    {{-- CARD: DITOLAK --}}
     <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-gray-100 dark:border-slate-700 shadow-sm flex items-center gap-4 transition-colors duration-300">
         <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-400 flex items-center justify-center text-xl shadow-inner">
             <i class="fa-solid fa-circle-xmark"></i>
         </div>
         <div>
             <p class="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Ditolak</p>
-            {{-- FIX: Mengacu ke status_layanan 'Ditolak' atau status_sla 'DITOLAK' --}}
             <h4 class="text-xl font-black text-gray-800 dark:text-white">{{ count($data_kunjungan->where('status_layanan', 'Ditolak')) }}</h4>
         </div>
     </div>
 
-    {{-- CARD: TERLAMBAT (FIXED) --}}
+    {{-- CARD: TERLAMBAT --}}
     <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-gray-100 dark:border-slate-700 shadow-sm flex items-center gap-4 transition-colors duration-300">
         <div class="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400 flex items-center justify-center text-xl shadow-inner">
             <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
         <div>
             <p class="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Terlambat</p>
-            {{-- FIX: Menggunakan filter kolom 'status_sla' dengan nilai 'TERLAMBAT' sesuai dump data kamu --}}
             <h4 class="text-xl font-black text-gray-800 dark:text-white">{{ count($data_kunjungan->where('status_sla', 'TERLAMBAT')) }}</h4>
         </div>
     </div>
@@ -319,14 +313,17 @@
                                     @endif
 
                                     @if($k->status_layanan == 'Antre')
+                                        {{-- LOGIKA BARU: TOMBOL MULAI PROSES --}}
                                         <button type="button" onclick="bukaModalProsesSLA('{{ $k->nomor_kunjungan }}')" class="w-9 h-9 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-600 dark:hover:bg-indigo-500 hover:text-white transition-all shadow-sm" title="Mulai Proses">
                                             <i class="fa-solid fa-play text-xs"></i>
                                         </button>
+                                        {{-- LOGIKA BARU: TOMBOL TOLAK SEBELUM LAYANAN DIMULAI --}}
+                                        <button type="button" onclick="bukaModalTolak('{{ $k->id }}')" class="w-9 h-9 flex items-center justify-center bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-xl hover:bg-rose-600 dark:hover:bg-rose-500 hover:text-white transition-all shadow-sm" title="Tolak Antrean">
+                                            <i class="fa-solid fa-xmark text-xs"></i>
+                                        </button>
                                     @elseif(strtolower($k->status_layanan) == 'diproses')
-                                        {{-- UPDATE: Tambahkan ID unik menggunakan kombinasi ID Kunjungan pada Tag Form --}}
                                         <form id="formSelesaiLayanan-{{ $k->id }}" action="{{ route('kunjungan.selesai', $k->id) }}" method="POST" class="m-0">
                                             @csrf
-                                            {{-- UPDATE: Mengubah type ke button dan memicu fungsi konfirmasiSelesai() dengan passing ID --}}
                                             <button type="button" onclick="konfirmasiSelesai('{{ $k->id }}')" class="w-9 h-9 flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-600 dark:hover:bg-emerald-500 hover:text-white transition-all shadow-sm" title="Selesai">
                                                 <i class="fa-solid fa-check text-xs"></i>
                                             </button>
@@ -336,10 +333,6 @@
                                             <button type="button" onclick="bukaModalUpload('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}')" class="w-9 h-9 flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-500 dark:hover:bg-amber-600 hover:text-white transition-all shadow-sm" title="Upload File">
                                                 <i class="fa-solid fa-paperclip text-xs"></i>
                                             </button>
-                                        @else
-                                            {{-- <div class="w-9 h-9 flex items-center justify-center bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-xl shadow-sm" title="File Sudah Upload">
-                                                <i class="fa-solid fa-check text-xs"></i>
-                                            </div> --}}
                                         @endif
                                     @endif
                                 @endif
@@ -396,15 +389,12 @@
     <div id="modalEmailPimpinan" class="fixed inset-0 z-[100] hidden bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-modal-up transition-colors duration-300">
             <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-start bg-gray-50/50 dark:bg-gray-800/50 gap-4">
-                {{-- Kumpulan judul dan deskripsi dibungkus agar menumpuk ke bawah dengan rapi --}}
                 <div class="flex-1">
                     <h3 class="text-lg font-black text-gray-800 dark:text-white">Kirim Email ke Pimpinan</h3>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
                         <span class="text-amber-500 font-semibold dark:text-amber-400">Penting:</span> Admin wajib mengirimkan email verifikasi ini untuk mengonfirmasi kepada Pimpinan bahwa ada data antrean baru yang memerlukan persetujuan atau tindak lanjut.
                     </p>
                 </div>
-                
-                {{-- Tombol Tutup Silang di posisi kanan atas --}}
                 <button type="button" id="btnCloseXEmail" onclick="tutupModalEmail()" class="text-gray-400 dark:text-gray-300 hover:text-rose-500 dark:hover:text-rose-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1 shrink-0">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
@@ -414,14 +404,12 @@
                 @csrf
                 <input type="hidden" name="kunjungan_id" id="modal_kunjungan_id">
                 
-                {{-- Box Ringkasan Informasi Kunjungan --}}
                 <div class="mb-5 bg-indigo-50/50 dark:bg-indigo-950/30 p-4 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/50">
                     <p class="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Informasi Kunjungan</p>
                     <p class="font-bold text-gray-800 dark:text-gray-200 text-sm" id="modal_nama_pengunjung"></p>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 italic" id="modal_keperluan_pengunjung"></p>
                 </div>
 
-                {{-- Input Field Email Tujuan --}}
                 <div class="mb-6">
                     <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-widest">Email Pimpinan</label>
                     <div class="relative">
@@ -430,7 +418,6 @@
                     </div>
                 </div>
 
-                {{-- Tombol Aksi --}}
                 <div class="flex justify-end gap-3">
                     <button type="button" id="btnBatalEmail" onclick="tutupModalEmail()" class="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">Batal</button>
                     <button type="submit" id="btnSubmitEmail" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 rounded-xl shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -457,8 +444,6 @@
             <form id="formForwardPimpinan" action="{{ route('kunjungan.kirim-massal') }}" method="POST" class="p-6">
                 @csrf
                 <input type="hidden" name="ids[]" id="forward_kunjungan_id">
-                
-                {{-- TAMBAHKAN DUA LINE BARU INI --}}
                 <input type="hidden" name="nama_pengunjung" id="forward_nama_hidden">
                 <input type="hidden" name="keperluan_pengunjung" id="forward_keperluan_hidden">
 
@@ -525,21 +510,38 @@
                 </div>
 
                 <div class="mb-6">
-                    {{-- UPDATE: Tambahkan id="inputFileSurat" --}}
                     <input type="file" name="file_surat" id="inputFileSurat" accept=".pdf" required class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-amber-100 dark:file:bg-amber-900/50 file:text-amber-700 dark:file:text-amber-400">
                 </div>
 
                 <div class="flex justify-end gap-3">
                     <button type="button" id="btnBatalUpload" onclick="tutupModalUpload()" class="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">Batal</button>
-                    {{-- UPDATE: Ditambahkan class hidden bawaan agar tombol tidak muncul sebelum ada file --}}
                     <button type="submit" id="btnSubmitUpload" class="hidden px-5 py-2.5 text-sm font-bold text-white bg-amber-600 dark:bg-amber-500 hover:bg-amber-700 dark:hover:bg-amber-600 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">Upload File</button>
                 </div>
             </form>
         </div>
     </div>
 
+{{-- LOGIKA BARU: MODAL TOLAK ANTREAN (DARI INDEX.BLADE) --}}
+<div id="modalTolak" class="fixed inset-0 z-[999] hidden items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2rem] p-6 shadow-2xl border dark:border-slate-800">
+        <div class="mb-5">
+            <h2 class="text-xl font-black text-slate-900 dark:text-white">Tolak Antrean</h2>
+            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Wajib isi alasan penolakan</p>
+        </div>
+       <form id="formTolak" method="POST" action="">
+            @csrf
+            <textarea name="alasan_tolak" required
+                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-rose-100 dark:focus:ring-rose-950 outline-none"
+                placeholder="Contoh: Dokumen tidak lengkap / data tidak valid"></textarea>
+            <div class="flex gap-3 mt-5">
+                <button type="button" onclick="tutupModalTolak()" class="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-black text-xs uppercase">Batal</button>
+                <button type="submit" class="flex-1 py-3 rounded-2xl bg-rose-600 text-white font-black text-xs uppercase shadow-lg dark:shadow-none">Kirim Penolakan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
     <style>
-    /* Agar scrollbar lebih estetik di mobile */
     .overflow-x-auto::-webkit-scrollbar {
         height: 4px;
     }
@@ -565,13 +567,13 @@
     </style>
 
 <script>
+    let isModalOpen = false; // Flag kontrol sinkronisasi refresh data
+
     // ==========================================
     // UTILITY: POP-UP LOADING GLOBAL & LOCK
     // ==========================================
     function showGlobalLoading(pesanText = "Sedang memproses data, mohon tunggu...") {
         const isDarkMode = document.documentElement.classList.contains('dark');
-
-        // Matikan fungsi penutupan modal dari klik luar area layar
         window.onclick = null;
 
         Swal.fire({
@@ -583,18 +585,22 @@
             showConfirmButton: false,
             background: isDarkMode ? '#1e293b' : '#ffffff',
             color: isDarkMode ? '#f8fafc' : '#1f2937',
+            backdrop: `
+                rgba(15, 23, 42, 0.3)
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+            `,
             customClass: {
                 popup: 'rounded-[2rem] shadow-2xl border border-gray-100 dark:border-slate-700 p-8',
                 title: 'font-black text-xl tracking-tight',
                 htmlContainer: 'text-sm text-gray-500 dark:text-gray-400 mt-2'
             },
             didOpen: () => {
-                Swal.showLoading(); // Memunculkan spinner load default SweetAlert2
+                Swal.showLoading();
             }
         });
     }
 
-    // Handler otomatis untuk form standar (SLA, Email, Upload)
     function handleModalLoading(event, formId, ...buttonIds) {
         event.preventDefault();
         const form = document.getElementById(formId);
@@ -604,22 +610,17 @@
             return false;
         }
 
-        // Kunci semua tombol yang di-passing di dalam modal agar tidak bisa diklik ganda
         buttonIds.forEach(id => {
             const btn = document.getElementById(id);
             if (btn) btn.disabled = true;
         });
 
-        // Ubah text tombol utama yang memicu submit menjadi spinner loading kecil
         const mainBtn = document.getElementById(buttonIds[0]);
         if (mainBtn) {
             mainBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Memproses...`;
         }
 
-        // Jalankan pop-up layar loading penuh (Full Lock Screen)
         showGlobalLoading();
-
-        // Submit form ke Laravel
         form.submit();
     }
 
@@ -627,6 +628,7 @@
     // MODAL PROSES SLA
     // ==========================================
     function bukaModalProsesSLA(nomorKunjungan) {
+        isModalOpen = true;
         const form = document.getElementById('formSLA');
         form.action = "{{ url('/dashboard/mulai-proses') }}/" + nomorKunjungan;
         document.getElementById('modalProsesSLA').classList.remove('hidden');
@@ -634,12 +636,33 @@
 
     function tutupModalSLA() {
         document.getElementById('modalProsesSLA').classList.add('hidden');
+        isModalOpen = false;
+    }
+
+    // ==========================================
+    // LOGIKA BARU: JAVASCRIPT MODAL TOLAK
+    // ==========================================
+    function bukaModalTolak(id) {
+        isModalOpen = true;
+        const modal = document.getElementById('modalTolak');
+        const form = document.getElementById('formTolak');
+        form.action = `/dashboard/tolak/${id}`;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function tutupModalTolak() {
+        const modal = document.getElementById('modalTolak');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        isModalOpen = false;
     }
 
     // ==========================================
     // MODAL EMAIL PIMPINAN
     // ==========================================
     function bukaModalEmail(id, nama, keperluan) {
+        isModalOpen = true;
         document.getElementById('modal_kunjungan_id').value = id;
         document.getElementById('modal_nama_pengunjung').innerText = nama;
         document.getElementById('modal_keperluan_pengunjung').innerText = keperluan ? `"${keperluan}"` : '-';
@@ -648,66 +671,63 @@
 
     function tutupModalEmail() {
         document.getElementById('modalEmailPimpinan').classList.add('hidden');
+        isModalOpen = false;
     }
 
     // ==========================================
     // MODAL UPLOAD FILE
     // ==========================================
     function bukaModalUpload(id, nama) {
+        isModalOpen = true;
         document.getElementById('upload_nama_pengunjung').innerText = nama;
         document.getElementById('formUploadSelesai').action = `/dashboard/upload-file/${id}`;
         document.getElementById('modalUploadFile').classList.remove('hidden');
     }
+
 document.addEventListener("DOMContentLoaded", function () {
     const inputFile = document.getElementById('inputFileSurat');
     const btnSubmitUpload = document.getElementById('btnSubmitUpload');
 
     if (inputFile && btnSubmitUpload) {
         inputFile.addEventListener('change', function () {
-            // Jika ada file yang dipilih, hapus class hidden (Tampilkan tombol)
             if (this.files && this.files.length > 0) {
                 btnSubmitUpload.classList.remove('hidden');
             } else {
-                // Jika tidak ada file yang dipilih, tambahkan class hidden (Sembunyikan tombol)
                 btnSubmitUpload.classList.add('hidden');
             }
         });
     }
 
-    // AMBIL BLOK FLASH SESSION DARI LARAVEL SINKRONISASI OTOMATIS
     @if(session('trigger_email_modal'))
         const targetId = "{{ session('email_kunjungan_id') }}";
         const targetNama = "{{ session('email_nama') }}";
-        
-        // UPDATE: Menggunakan json_encode agar aman dari string rusak, tanda petik ganda, maupun baris baru (Enter)
         const targetKeperluan = {!! json_encode(session('email_keperluan')) !!};
 
-        // Tembakkan langsung ke modal email bawaan Anda tanpa intervensi user
         if (typeof bukaModalEmail === 'function' && targetId) {
             bukaModalEmail(targetId, targetNama, targetKeperluan);
         }
     @endif
 });
 
-    // Sesuaikan fungsi tutup modal bawaan Anda agar mereset form & menyembunyikan kembali tombol
     function tutupModalUpload() {
         const form = document.getElementById('formUploadSelesai');
         const btnSubmitUpload = document.getElementById('btnSubmitUpload');
 
-        if (form) form.reset(); // Mengosongkan kembali input file yang sudah dipilih
-        if (btnSubmitUpload) btnSubmitUpload.classList.add('hidden'); // Sembunyikan tombol kembali
+        if (form) form.reset();
+        if (btnSubmitUpload) btnSubmitUpload.classList.add('hidden');
 
         document.getElementById('modalUploadFile').classList.add('hidden');
+        isModalOpen = false;
     }
 
     // ==========================================
     // MODAL FORWARD PIMPINAN
     // ==========================================
     function bukaModalForward(id, nama, keperluan) {
+        isModalOpen = true;
         document.getElementById('forward_kunjungan_id').value = id;
         document.getElementById('forward_nama_pengunjung').innerText = nama;
         
-        // ISI VALUE DATA HIDDEN AGAR IKUT TERKIRIM SAAT SUBMIT
         if(document.getElementById('forward_nama_hidden')) {
             document.getElementById('forward_nama_hidden').value = nama;
         }
@@ -720,6 +740,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function tutupModalForward() {
         document.getElementById('modalForwardPimpinan').classList.add('hidden');
+        isModalOpen = false;
     }
 
     // ==========================================
@@ -728,11 +749,12 @@ document.addEventListener("DOMContentLoaded", function () {
     window.onclick = function(event) {
         if (event.target.id && event.target.id.startsWith('modal')) {
             event.target.classList.add('hidden');
+            isModalOpen = false;
         }
     }
 
     // ==========================================
-    // SPECIAL HANDLER: FORWARD PIMPINAN (CONFRIM -> LOCK)
+    // SPECIAL HANDLER: FORWARD PIMPINAN
     // ==========================================
     function konfirmasiForward() {
         const form = document.getElementById('formForwardPimpinan');
@@ -767,7 +789,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                // Kunci seluruh tombol di dalam modal forward
                 if (btnSubmit) btnSubmit.disabled = true;
                 if (btnBatal) btnBatal.disabled = true;
                 if (btnCloseX) btnCloseX.disabled = true;
@@ -778,9 +799,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     btnSubmit.classList.add('bg-violet-400', 'dark:bg-violet-600/50');
                 }
 
-                // Panggil pop-up konfirmasi loading global
                 showGlobalLoading("Sedang merujuk data kunjungan ke pimpinan...");
-
                 form.submit();
             }
         });
@@ -790,25 +809,12 @@ document.addEventListener("DOMContentLoaded", function () {
 <script>
     // Auto-reload halaman setiap 3 menit jika tidak ada modal yang terbuka
     setInterval(() => {
-        const modalSLA = document.getElementById('modalProsesSLA');
-        const modalEmail = document.getElementById('modalEmailPimpinan');
-        const modalForward = document.getElementById('modalForwardPimpinan');
-        const modalUpload = document.getElementById('modalUploadFile');
-
-        // Pastikan juga mengecek pop-up loading SweetAlert2 sedang aktif atau tidak
         const isSwalOpen = Swal.isVisible();
-
-        const isModalOpen =
-            (modalSLA && !modalSLA.classList.contains('hidden')) ||
-            (modalEmail && !modalEmail.classList.contains('hidden')) ||
-            (modalForward && !modalForward.classList.contains('hidden')) ||
-            (modalUpload && !modalUpload.classList.contains('hidden')) ||
-            isSwalOpen;
-
-        if (!isModalOpen) {
+        if (!isModalOpen && !isSwalOpen) {
             window.location.reload();
         }
     }, 180000);
+
     // ==========================================
     // SPECIAL HANDLER: KONFIRMASI SELESAI LAYANAN
     // ==========================================
@@ -825,13 +831,10 @@ document.addEventListener("DOMContentLoaded", function () {
             showCancelButton: true,
             confirmButtonText: 'Ya, Selesai',
             cancelButtonText: 'Batal',
-
-            // Pengaturan warna tema mengikuti status dark mode Anda
             background: isDarkMode ? '#1e293b' : '#ffffff',
             color: isDarkMode ? '#f8fafc' : '#1f2937',
-            confirmButtonColor: '#10b981',                   // bg-emerald-500 sesuai tema tombol Anda
+            confirmButtonColor: '#10b981',
             cancelButtonColor: isDarkMode ? '#475569' : '#94a3b8',
-
             customClass: {
                 popup: 'rounded-[2rem] shadow-2xl border border-gray-100 dark:border-slate-700',
                 title: 'font-black text-xl tracking-tight',
@@ -841,59 +844,34 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                // Panggil fungsi pop-up loading global Anda untuk mengunci seluruh interaksi layar
-                if (typeof showGlobalLoading === 'function') {
-                    showGlobalLoading("Sedang memperbarui status layanan menjadi selesai...");
-                } else {
-                    // Fallback jika fungsi global loading belum sempat terbaca oleh dokumen
-                    Swal.fire({
-                        title: 'Memproses...',
-                        text: 'Sedang menyimpan data...',
-                        allowOutsideClick: false,
-                        showConfirmButton: false,
-                        didOpen: () => { Swal.showLoading(); }
-                    });
-                }
-
-                // Submit data form ke controller Laravel secara aman
+                showGlobalLoading("Sedang memperbarui status layanan menjadi selesai...");
                 form.submit();
             }
         });
     }
-    // Handler saat formulir diklik tombol "Cari" atau ditekan Enter pada input text
-function handleCariLoading(event, formElement) {
-    // Panggil pop-up loading global bawaan sistem Anda
-    if (typeof showGlobalLoading === 'function') {
-        showGlobalLoading("Sedang mencari dan menyinkronkan data, mohon tunggu...");
-    }
 
-    // Ubah visual tombol cari menjadi mode loading beku
+function handleCariLoading(event, formElement) {
+    showGlobalLoading("Sedang mencari dan menyinkronkan data, mohon tunggu...");
     const btnCari = document.getElementById('btnSubmitCari');
     if (btnCari) {
         btnCari.disabled = true;
         const icon = btnCari.querySelector('i');
         const text = btnCari.querySelector('span');
-
         if (icon) icon.className = "fa-solid fa-spinner fa-spin mr-2";
         if (text) text.innerText = "Memuat...";
     }
     return true;
 }
 
-// Handler khusus untuk mengunci layar saat user mengubah opsi select prodi
 function handleSelectProdiLoading(selectElement) {
-    if (typeof showGlobalLoading === 'function') {
-        showGlobalLoading("Memfilter data program studi...");
-    }
-    // Kirim formulir ke backend secara terprogram
+    showGlobalLoading("Memfilter data program studi...");
     selectElement.form.submit();
 }
-// Handler khusus saat tombol "X" (Clear/Reset Filter) diklik
+
 function handleResetLoading() {
-    if (typeof showGlobalLoading === 'function') {
-        showGlobalLoading("Membersihkan filter dan memuat ulang data...");
-    }
+    showGlobalLoading("Membersihkan filter dan memuat ulang data...");
 }
+
 function peringatanEmailWajib(id, nama, keperluan) {
     const isDarkMode = document.documentElement.classList.contains('dark');
 
@@ -904,18 +882,10 @@ function peringatanEmailWajib(id, nama, keperluan) {
         showCancelButton: true,
         confirmButtonText: 'Buka Form Email',
         cancelButtonText: 'Nanti Saja',
-        
         background: isDarkMode ? '#1e293b' : '#ffffff',
         color: isDarkMode ? '#f8fafc' : '#1f2937',
         confirmButtonColor: '#f59e0b', 
         cancelButtonColor: isDarkMode ? '#475569' : '#94a3b8',
-
-        backdrop: `
-            rgba(15, 23, 42, 0.3)
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-        `,
-
         customClass: {
             popup: 'rounded-[2rem] shadow-2xl border border-gray-100 dark:border-slate-700 p-6',
             title: 'font-black text-xl tracking-tight text-amber-600 dark:text-amber-400',
@@ -925,12 +895,7 @@ function peringatanEmailWajib(id, nama, keperluan) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            // Memastikan fungsi pembuka modal utama Anda dipanggil dengan parameter yang sama
-            if (typeof bukaModalEmail === 'function') {
-                bukaModalEmail(id, nama, keperluan);
-            } else {
-                alert('Fungsi bukaModalEmail tidak ditemukan!');
-            }
+            bukaModalEmail(id, nama, keperluan);
         }
     });
 }
