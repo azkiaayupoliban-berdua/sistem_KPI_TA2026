@@ -15,7 +15,7 @@ class KunjunganController extends Controller
     // =========================================================================
     // HELPER FUNCTIONS UNTUK GOOGLE SPREADSHEET API
     // =========================================================================
-    
+
     private function getApiUrl()
     {
         return env('GOOGLE_SCRIPT_URL');
@@ -28,7 +28,7 @@ class KunjunganController extends Controller
                 'action' => 'read',
                 'sheet'  => $sheetName
             ]);
-            
+
             // Jika Google malah mengembalikan HTML / Error
             if (!$response->successful() || !is_array($response->json('data'))) {
                 \Illuminate\Support\Facades\Log::error("API Error / Bukan JSON di sheet: " . $sheetName);
@@ -95,7 +95,7 @@ class KunjunganController extends Controller
             // 2. Cari atau Buat Pengunjung
             $pengunjungList = $this->readSheet('pengunjung');
             $pengunjung = $pengunjungList->firstWhere('no_telepon', $request->no_telepon);
-            
+
             $pengunjungId = null;
             if (!$pengunjung) {
                 $baru = $this->createSheet('pengunjung', [
@@ -104,10 +104,10 @@ class KunjunganController extends Controller
                     'identitas_no' => $request->identitas_no,
                     'asal_instansi'=> $request->asal_instansi
                 ]);
-                
+
                 // Pengecekan aman agar tidak error jika API Google gagal membalas ID
                 $pengunjungId = is_array($baru) && isset($baru['inserted_id']) ? $baru['inserted_id'] : rand(1000, 9999);
-                
+
                 $pengunjung = (object) [
                     'id' => $pengunjungId,
                     'nama_lengkap' => $request->nama_lengkap,
@@ -119,7 +119,7 @@ class KunjunganController extends Controller
 
             // 3. Catatan Keperluan Tambahan
             $nomor_kunjungan = 'IN-' . date('ymd') . '-' . rand(100, 999);
-            
+
             $kunjunganData = [
                 'nomor_kunjungan' => $nomor_kunjungan,
                 'pengunjung_id'   => $pengunjungId,
@@ -134,7 +134,7 @@ class KunjunganController extends Controller
 
             // 4. Kirim data ke Spreadsheet Kunjungan
             $createKunjungan = $this->createSheet('kunjungan', $kunjunganData);
-            
+
             // 5. Bypass (Lewati) proses Email agar tidak mengganggu perpindahan halaman
             try {
                 $kunjunganObj = (object) $kunjunganData;
@@ -161,7 +161,7 @@ class KunjunganController extends Controller
 
         } catch (\Exception $e) {
             Log::error("Proses pendaftaran gagal: " . $e->getMessage());
-            
+
             // Tampilkan error paksa di layar jika ternyata API Google-nya yang bermasalah
             dd("Error sistem: " . $e->getMessage() . ". Mohon periksa API Spreadsheet Anda.");
         }
@@ -329,9 +329,9 @@ public function kirimMassal(Request $request)
     }
 
     $namaTujuan = $tujuan == 'kajur' ? 'Kajur' : 'Kaprodi';
-    
+
     // Ambil ID pertama dari array ids karena alur otomatis ini dipicu dari tombol baris tunggal
-    $kunjunganId = $ids[0] ?? null; 
+    $kunjunganId = $ids[0] ?? null;
 
     // Kembalikan back dengan tambahan data Flash Session untuk memicu modal email di JavaScript
     return back()->with([
@@ -360,5 +360,34 @@ public function kirimMassal(Request $request)
         return response()->json([
             'status' => 'not_found'
         ]);
+    }
+    public function getAntreanDiproses()
+    {
+        try {
+            $kunjunganList = $this->readSheet('kunjungan');
+
+            // Ambil SEMUA data tanpa filter tanggal hari ini
+            $antreanAktif = $kunjunganList->filter(function($item) {
+                $status = isset($item->status_layanan) ? trim($item->status_layanan) : '';
+
+                // Ambil semua yang berstatus "Diproses" (tidak peduli tanggal berapa)
+                return strtolower($status) === 'diproses';
+            })->map(function($item) {
+                return [
+                    'nomor' => $item->nomor_kunjungan
+                ];
+            })->values();
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $antreanAktif
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => []
+            ], 500);
+        }
     }
 }

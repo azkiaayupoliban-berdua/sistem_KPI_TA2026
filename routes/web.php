@@ -5,11 +5,13 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PimpinanKonfirmasiController;
 use App\Http\Controllers\ControlPanelController;
+use App\Http\Controllers\KunjunganController;
 
 
 
 use App\Http\Middleware\CekSessionLogin;
 
+Route::get('/api/antrean-diproses', [KunjunganController::class, 'getAntreanDiproses'])->name('api.antrean.diproses');
 /*
 notif data masuk dari pengunjung ke admin
 */
@@ -49,11 +51,11 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 */
 // Menggunakan middleware session manual pengganti auth bawaan SQL
 Route::middleware([CekSessionLogin::class])->group(function () {
-    
+
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::post('/dashboard/antrean/kirim-massal', 'App\Http\Controllers\KunjunganController@kirimMassal')->name('kunjungan.kirim-massal');
-    
+
     // Halaman Khusus Pimpinan
     Route::get('/dashboard/pimpinan/konfirmasi', [PimpinanKonfirmasiController::class, 'index'])->name('pimpinan.konfirmasi');
     Route::post('/dashboard/pimpinan/konfirmasi/{id}/tanggapan', [PimpinanKonfirmasiController::class, 'tanggapan'])->name('pimpinan.tanggapan');
@@ -90,12 +92,12 @@ Route::middleware([CekSessionLogin::class])->group(function () {
      * HALAMAN OPERASIONAL (Admin & Super Admin)
      */
     Route::get('/dashboard/manajemen-antrean', [DashboardController::class, 'manajemenAntrean'])->name('dashboard.antrean');
-    
+
     Route::post(
         '/dashboard/upload-file/{id}',
         [DashboardController::class,'uploadFile']
     )->name('kunjungan.upload');
-    
+
     // Binding parameter disesuaikan dengan isi Controller tanpa Model Binding
     Route::post('/dashboard/mulai-proses/{nomor_kunjungan}', [DashboardController::class, 'mulaiProses'])->name('kunjungan.mulaiProses');
     Route::post('/dashboard/tolak/{id}', [DashboardController::class, 'tolak'])->name('kunjungan.tolak');

@@ -1,10 +1,10 @@
 @extends('layouts.app')
 <style>
     .swal2-backdrop-show {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-    background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
-}
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+    }
 </style>
 
 @section('content')
@@ -43,11 +43,11 @@
         {{-- DROPDOWN EKSPOR DENGAN DESAIN GRADASI PREMIUM --}}
         <div class="relative w-full sm:w-auto text-left">
             <button type="button" onclick="toggleExportDropdown()" id="btnDropdownTrigger"
-    class="inline-flex justify-center items-center gap-2 w-full sm:w-auto bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
-    <i class="fa-solid fa-file-export text-base"></i>
-    <span>Ekspor Laporan</span>
-    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 ml-1" id="dropdownArrow"></i>
-</button>
+                class="inline-flex justify-center items-center gap-2 w-full sm:w-auto bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
+                <i class="fa-solid fa-file-export text-base"></i>
+                <span>Ekspor Laporan</span>
+                <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 ml-1" id="dropdownArrow"></i>
+            </button>
 
             {{-- MENU DROPDOWN --}}
             <div id="exportDropdownMenu"
@@ -66,55 +66,41 @@
     </div>
 </div>
 
-    {{-- CARD STATISTIK --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-
-        {{-- TOTAL --}}
-        <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
-            <div>
-                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                    Total Kunjungan
-                </p>
-                <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                    {{ $total_kunjungan }}
-                </h2>
-            </div>
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
-                <i class="fa-solid fa-users"></i>
-            </div>
+{{-- CARD STATISTIK --}}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+    {{-- TOTAL --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+        <div>
+            <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">Total Kunjungan</p>
+            <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">{{ $total_kunjungan }}</h2>
         </div>
-
-        {{-- SLA --}}
-        <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
-            <div>
-                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                    Efektivitas (SLA)
-                </p>
-                <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                    {{ $efektivitas_persen }}%
-                </h2>
-            </div>
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
-                <i class="fa-solid fa-clock"></i>
-            </div>
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
+            <i class="fa-solid fa-users"></i>
         </div>
-
-        {{-- SURVEI --}}
-        <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
-            <div>
-                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                    Kualitas (Survei)
-                </p>
-                <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                    {{ $kualitas_rating }}
-                </h2>
-            </div>
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
-                <i class="fa-solid fa-star"></i>
-            </div>
-        </div>
-
     </div>
+
+    {{-- SLA --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+        <div>
+            <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">Efektivitas (SLA)</p>
+            <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">{{ $efektivitas_persen }}%</h2>
+        </div>
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
+            <i class="fa-solid fa-clock"></i>
+        </div>
+    </div>
+
+    {{-- SURVEI --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
+        <div>
+            <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">Kualitas (Survei)</p>
+            <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">{{ $kualitas_rating }}</h2>
+        </div>
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
+            <i class="fa-solid fa-star"></i>
+        </div>
+    </div>
+</div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
     {{-- Grafik Tren Waktu Layanan (SLA) --}}
@@ -185,10 +171,11 @@
     <div class="mb-6">
         <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">Analisis Kinerja Layanan Mingguan</h3>
         <p class="text-slate-500 dark:text-slate-400 text-sm">
-            Menampilkan data performa pelayanan dari tanggal 
-            <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ \Carbon\Carbon::parse($startDate ?? now())->startOfWeek(1)->format('d M Y') }}</span> 
-            s.d 
-            <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ \Carbon\Carbon::parse($startDate ?? now())->endOfWeek(5)->format('d M Y') }}</span>.
+            Menampilkan data performa pelayanan dari tanggal
+            {{-- PERBAIKAN DI SINI: Mengunci konversi awal minggu (Senin) dan akhir minggu (Jumat) agar tidak lompat pekan --}}
+            <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ \Carbon\Carbon::parse(request('start_date') ?? now())->startOfWeek(\Carbon\Carbon::MONDAY)->format('d M Y') }}</span>
+            s.d
+            <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ \Carbon\Carbon::parse(request('start_date') ?? now())->startOfWeek(\Carbon\Carbon::MONDAY)->addDays(4)->format('d M Y') }}</span>.
         </p>
     </div>
     <div class="relative h-64 sm:h-72 w-full">
@@ -196,11 +183,9 @@
     </div>
 </div>
 
-{{-- MODAL EKSPOR PERIODE (TEMA PREMIUM MATCHING) --}}
+{{-- MODAL EKSPOR PERIODE --}}
 <div id="exportModal" class="fixed inset-0 z-[999] hidden bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-10 max-w-md w-full shadow-2xl animate-modal-up relative transition-colors duration-300">
-
-        {{-- HEADER MODAL --}}
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h3 class="text-xl md:text-2xl font-black text-gray-800 dark:text-white tracking-tight">Periode Laporan</h3>
@@ -211,7 +196,6 @@
             </button>
         </div>
 
-        {{-- BANNER INFORMASI / PERHATIAN --}}
         <div class="mb-6 p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50">
             <p class="text-[10px] uppercase font-black tracking-widest text-indigo-600 dark:text-indigo-400 mb-1">
                 <i class="fa-solid fa-circle-info mr-1"></i> Informasi Ekspor
@@ -221,7 +205,6 @@
             </p>
         </div>
 
-        {{-- INPUT TANGGAL PERIODE --}}
         <div class="space-y-5 mb-8">
             <div class="flex flex-col gap-2">
                 <label class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2 tracking-widest">Tanggal Awal</label>
@@ -240,7 +223,6 @@
             </div>
         </div>
 
-        {{-- TOMBOL PILIHAN FORMAT DOWNLOAD --}}
         <div class="grid grid-cols-2 gap-4">
             <button id="btnExcel" class="flex items-center justify-center gap-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl dark:shadow-none hover:scale-[1.02]">
                 <i class="fa-regular fa-file-excel text-base"></i> Excel
@@ -260,28 +242,15 @@
         <p class="text-[11px] text-slate-400 dark:text-gray-400 leading-relaxed">Mohon tunggu, sistem sedang merangkum data laporan...</p>
     </div>
 </div>
-
-{{-- MODAL LOADING POP-UP (KUNCI PENYELARASAN) --}}
-<div id="loading-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm p-4">
-    <div class="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col items-center max-w-xs w-full text-center">
-        <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent dark:border-indigo-400 dark:border-t-transparent rounded-full animate-spin mb-4"></div>
-        <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1">Menyiapkan Dokumen</h3>
-        <p class="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">Mohon tunggu, sistem sedang memproses data laporan Anda...</p>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    // Deteksi apakah layout.app menggunakan mode gelap
     const isDark = document.documentElement.classList.contains('dark');
-
-    // Konfigurasi warna dinamis Chart berdasarkan mode
     const gridColor = isDark ? '#334155' : '#f1f5f9';
     const textColorPrimary = isDark ? '#cbd5e1' : '#64748b';
-    const textColorSecondary = isDark ? '#94a3b8' : '#cbd5e1';
 
     // ==========================================
     // 1. CHART KEPUASAN (DOUGHNUT)
@@ -375,9 +344,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // ==========================================
-    // 4. CLOSING TRIGGER UNTUK DROPDOWN OUTSIDE CLICK
-    // ==========================================
     window.addEventListener('click', function(e) {
         const dropdown = document.getElementById('exportDropdownMenu');
         const trigger = document.getElementById('btnDropdownTrigger');
@@ -388,11 +354,8 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
-// ======================================================
-// 5. KONTROL INTERAKSI JAVASCRIPT DROPDOWN & MODAL
-// ======================================================
 let exportRoute = '';
-let isModalOpen = false; // Kunci utama penjedaan auto refresh halaman
+let isModalOpen = false;
 
 function toggleExportDropdown() {
     const dropdown = document.getElementById('exportDropdownMenu');
@@ -410,9 +373,7 @@ function openExportModal(laporan) {
     exportRoute = laporan;
     document.getElementById('exportStartDate').value = '';
     document.getElementById('exportEndDate').value = '';
-
     isModalOpen = true;
-
     const modal = document.getElementById('exportModal');
     if (modal) {
         modal.classList.remove('hidden');
@@ -426,25 +387,14 @@ function closeExportModal() {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     }
-
     isModalOpen = false;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     const btnExcel = document.getElementById('btnExcel');
     const btnPdf = document.getElementById('btnPdf');
-
-    if (btnExcel) {
-        btnExcel.addEventListener('click', function() {
-            downloadLaporan('xlsx');
-        });
-    }
-
-    if (btnPdf) {
-        btnPdf.addEventListener('click', function() {
-            downloadLaporan('pdf');
-        });
-    }
+    if (btnExcel) btnExcel.addEventListener('click', function() { downloadLaporan('xlsx'); });
+    if (btnPdf) btnPdf.addEventListener('click', function() { downloadLaporan('pdf'); });
 });
 
 function downloadLaporan(type) {
@@ -457,11 +407,8 @@ function downloadLaporan(type) {
     }
 
     const prodi = document.querySelector('[name=prodi_id]')?.value ?? '';
-
     const loadingModal = document.getElementById('loading-modal');
-    if (loadingModal) {
-        loadingModal.classList.remove('hidden');
-    }
+    if (loadingModal) loadingModal.classList.remove('hidden');
 
     const modal = document.getElementById('exportModal');
     if (modal) {
@@ -469,78 +416,60 @@ function downloadLaporan(type) {
         modal.classList.remove('flex');
     }
 
-    // 5. Pastikan status auto refresh tetap PAUSED selama loading berputar
     isModalOpen = true;
 
-    // 6. Jalankan pemanggilan rute asli bawaan kode Anda (Bebas Error Nama Berubah)
     window.location = '/laporan/' + exportRoute +
                       '?type=' + type +
                       '&start_date=' + startDate +
                       '&end_date=' + endDate +
                       '&prodi_id=' + prodi;
 
-    // 7. Sembunyikan pop-up loading otomatis setelah file dikirim browser & aktifkan refresh kembali
     setTimeout(function() {
-        if (loadingModal) {
-            loadingModal.classList.add('hidden');
-        }
-        isModalOpen = false; // Auto refresh aktif kembali normal
+        if (loadingModal) loadingModal.classList.add('hidden');
+        isModalOpen = false;
     }, 15000);
 }
 </script>
+
 {{-- SCRIPT RENDERING CHART --}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const ctx = document.getElementById('kinerjaChart').getContext('2d');
 
-        const chartLabels = {!! json_encode($labels) !!}; 
+        const chartLabels = {!! json_encode($labels) !!};
         let chartDatasets = {!! json_encode($chartDatasets) !!};
 
         const isDarkMode = document.documentElement.classList.contains('dark');
         const textColor = isDarkMode ? '#94a3b8' : '#64748b';
         const gridColor = isDarkMode ? 'rgba(148, 163, 184, 0.1)' : 'rgba(100, 116, 139, 0.05)';
 
-        // PEWARNAAN DINAMIS SESUAI PREDIKAT TABEL 3.5 ACUAN RIIL
         chartDatasets = chartDatasets.map(function(dataset) {
             const dynamicColors = dataset.data.map(function(nilai) {
-                if (nilai >= 90) {
-                    return '#3b82f6'; // bg-blue-500 (Sangat Baik)
-                } else if (nilai >= 76) {
-                    return '#10b981'; // bg-emerald-500 (Baik)
-                } else if (nilai >= 60) {
-                    return '#f59e0b'; // bg-amber-500 (Cukup)
-                } else if (nilai > 0) {
-                    return '#ef4444'; // bg-red-500 (Kurang)
-                } else {
-                    return '#6b7280'; // bg-gray-500 (N/A / Tidak Ada Layanan)
-                }
+                if (nilai >= 90) return '#3b82f6';
+                else if (nilai >= 76) return '#10b981';
+                else if (nilai >= 60) return '#f59e0b';
+                else if (nilai > 0) return '#ef4444';
+                else return '#6b7280';
             });
 
             const dynamicBorders = dataset.data.map(function(nilai) {
-                if (nilai >= 90) {
-                    return '#2563eb';
-                } else if (nilai >= 76) {
-                    return '#059669';
-                } else if (nilai >= 60) {
-                    return '#d97706';
-                } else if (nilai > 0) {
-                    return '#dc2626';
-                } else {
-                    return '#4b5563';
-                }
+                if (nilai >= 90) return '#2563eb';
+                else if (nilai >= 76) return '#059669';
+                else if (nilai >= 60) return '#d97706';
+                else if (nilai > 0) return '#dc2626';
+                else return '#4b5563';
             });
 
             dataset.backgroundColor = dynamicColors;
             dataset.borderColor = dynamicBorders;
             dataset.borderWidth = 1;
-            dataset.borderRadius = 6; 
+            dataset.borderRadius = 6;
 
             return dataset;
         });
 
         new Chart(ctx, {
-            type: 'bar', 
+            type: 'bar',
             data: {
                 labels: chartLabels,
                 datasets: chartDatasets
@@ -550,7 +479,7 @@ function downloadLaporan(type) {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom', 
+                        position: 'bottom',
                         labels: {
                             color: textColor,
                             font: { family: 'Plus Jakarta Sans, sans-serif', weight: '600', size: 11 },
@@ -569,12 +498,8 @@ function downloadLaporan(type) {
                         callbacks: {
                             label: function(context) {
                                 let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.raw !== null) {
-                                    label += context.raw + '%';
-                                }
+                                if (label) label += ': ';
+                                if (context.raw !== null) label += context.raw + '%';
                                 return label;
                             }
                         }
@@ -582,7 +507,7 @@ function downloadLaporan(type) {
                 },
                 scales: {
                     x: {
-                        stacked: false, 
+                        stacked: false,
                         grid: { display: false },
                         ticks: { color: textColor, font: { size: 11 } }
                     },
@@ -590,14 +515,11 @@ function downloadLaporan(type) {
                         stacked: false,
                         grid: { color: gridColor },
                         min: 0,
-                        max: 100, // Batasi sumbu Y maksimal 100%
-                        ticks: { 
-                            color: textColor, 
+                        max: 100,
+                        ticks: {
+                            color: textColor,
                             font: { size: 11 },
-                            // Menghilangkan fungsi stepSize lama untuk mencegah penumpukan teks angka
-                            callback: function(value) {
-                                return value + '%';
-                            }
+                            callback: function(value) { return value + '%'; }
                         }
                     }
                 }

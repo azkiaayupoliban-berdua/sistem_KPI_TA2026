@@ -122,9 +122,26 @@
                     </button>
                 </div>
 
-                <div class="mt-12 h-24 w-full max-w-md rounded-2xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border border-white dark:border-slate-800 shadow-sm flex items-center justify-center">
-                    <span class="text-slate-500 dark:text-slate-400 font-bold text-xs uppercase tracking-widest">Pelacakan Real-Time Terintegrasi</span>
-                </div>
+<div class="mt-12 h-24 w-full max-w-md rounded-2xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border border-white dark:border-slate-800 shadow-sm flex flex-col items-center justify-center overflow-hidden relative p-4">
+
+    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1 z-10">
+        Status Loket Melayani
+    </div>
+
+    <div class="w-full h-12 flex items-center justify-center overflow-hidden relative" style="perspective: 1000px;">
+        <div id="antrean-container" class="transition-all duration-700 ease-in-out transform flex flex-col items-center justify-center w-full" style="transform-origin: center center -20px; transform: rotateX(0deg); opacity: 1;">
+            <span class="text-slate-400 text-xs italic animate-pulse">Menghubungkan ke sistem...</span>
+        </div>
+    </div>
+
+    <div class="absolute bottom-2 right-3 flex items-center gap-1.5">
+        <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        <span class="text-[9px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Live</span>
+    </div>
+</div>
             </div>
 
             <div class="order-2 lg:order-2 bg-white dark:bg-slate-900 p-6 lg:p-10 rounded-[2rem] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
@@ -337,7 +354,7 @@
         </div>
     </footer>
 
-    <script>
+<script>
         function lacakAntrean() {
             const inputField = document.getElementById('inputLacak');
             const nomorKunjungan = inputField.value.trim().toUpperCase();
@@ -362,7 +379,6 @@
         async function cekPengunjungLama(){
             const identitas = document.getElementById('identitas_no').value;
             const status = document.getElementById('status-cek');
-            // 1. Ambil elemen pop-up loading
             const loadingModal = document.getElementById('loading-modal');
 
             if(!identitas){
@@ -372,7 +388,6 @@
 
             status.innerHTML = '<span class="text-indigo-500 dark:text-indigo-400">Mencari data...</span>';
 
-            // 2. Tampilkan pop-up loading (layar otomatis terkunci)
             if (loadingModal) loadingModal.classList.remove('hidden');
 
             try {
@@ -390,7 +405,6 @@
             } catch(err) {
                 status.innerHTML = '<span class="text-rose-500">Gagal cek data</span>';
             } finally {
-                // 3. Sembunyikan kembali pop-up loading setelah proses fetch selesai (sukses/gagal)
                 if (loadingModal) loadingModal.classList.add('hidden');
             }
         }
@@ -448,40 +462,155 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            let currentIndex = 0;
+            let currentFeatureIndex = 0;
             const totalCards = 4;
 
             function rotateHighlight() {
                 for (let i = 0; i < totalCards; i++) {
                     const card = document.getElementById(`feature-card-${i}`);
+                    if(!card) continue;
                     const iconBox = card.querySelector('.icon-box');
 
-                    // Kembalikan ke desain standar (Mendukung Light & Dark)
                     card.classList.remove('shadow-xl', 'scale-105', 'border-purple-200', 'dark:border-purple-900', 'bg-gradient-to-b', 'from-white', 'to-purple-50/30', 'dark:from-slate-900', 'dark:to-purple-950/20');
                     card.classList.add('shadow-sm', 'border-slate-100', 'dark:border-slate-800/60');
 
-                    iconBox.classList.remove('bg-purple-500', 'text-white', 'dark:bg-purple-600');
-                    iconBox.classList.add('bg-purple-50', 'text-purple-500', 'dark:bg-purple-950/40', 'dark:text-purple-400');
+                    if(iconBox) {
+                        iconBox.classList.remove('bg-purple-500', 'text-white', 'dark:bg-purple-600');
+                        iconBox.classList.add('bg-purple-50', 'text-purple-500', 'dark:bg-purple-950/40', 'dark:text-purple-400');
+                    }
                 }
 
-                // Berikan efek aktif ke kartu yang dituju saat ini (Mendukung Light & Dark)
-                const activeCard = document.getElementById(`feature-card-${currentIndex}`);
-                const activeIcon = activeCard.querySelector('.icon-box');
-
-                if (activeCard && activeIcon) {
+                const activeCard = document.getElementById(`feature-card-${currentFeatureIndex}`);
+                if(activeCard) {
+                    const activeIcon = activeCard.querySelector('.icon-box');
                     activeCard.classList.remove('shadow-sm', 'border-slate-100', 'dark:border-slate-800/60');
                     activeCard.classList.add('shadow-xl', 'scale-105', 'border-purple-200', 'dark:border-purple-900', 'bg-gradient-to-b', 'from-white', 'to-purple-50/30', 'dark:from-slate-900', 'dark:to-purple-950/20');
 
-                    activeIcon.classList.remove('bg-purple-50', 'text-purple-500', 'dark:bg-purple-950/40', 'dark:text-purple-400');
-                    activeIcon.classList.add('bg-purple-500', 'text-white', 'dark:bg-purple-600');
+                    if (activeIcon) {
+                        activeIcon.classList.remove('bg-purple-50', 'text-purple-500', 'dark:bg-purple-950/40', 'dark:text-purple-400');
+                        activeIcon.classList.add('bg-purple-500', 'text-white', 'dark:bg-purple-600');
+                    }
                 }
 
-                currentIndex = (currentIndex + 1) % totalCards;
+                currentFeatureIndex = (currentFeatureIndex + 1) % totalCards;
             }
 
             rotateHighlight();
             setInterval(rotateHighlight, 3000);
         });
+    </script>
+
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const container = document.getElementById('antrean-container');
+    let antreanList = [];
+    let currentIndex = 0;
+    let animationInterval = null;
+    let isFirstLoad = true;
+
+    function updateDisplay() {
+        // Jika tidak ada data sama sekali
+        if (antreanList.length === 0) {
+            clearInterval(animationInterval);
+            animationInterval = null;
+            container.innerHTML = `<span class="text-slate-400 dark:text-slate-500 font-medium text-sm">Tidak Ada Antrean Diproses</span>`;
+            return;
+        }
+
+        // Jika hanya ada 1 data, tampilkan warna Biru (Statis)
+        if (antreanList.length === 1) {
+            clearInterval(animationInterval);
+            animationInterval = null;
+            container.innerHTML = `
+                <span class="text-xl font-black text-blue-600 dark:text-blue-400 tracking-wider bg-blue-50 dark:bg-blue-950/40 px-4 py-1 rounded-xl border border-blue-100 dark:border-blue-900/50 min-w-[140px] text-center shadow-inner animate-fade-in">
+                    ${antreanList[0].nomor}
+                </span>
+            `;
+        } else {
+            // Jika data lebih dari 1, jalankan animasi perputaran (Warna Hijau)
+            if (!animationInterval) {
+                startRotation();
+            }
+        }
+    }
+
+function startRotation() {
+        clearInterval(animationInterval);
+
+        if (antreanList[currentIndex]) {
+            renderTickerItem(antreanList[currentIndex].nomor);
+        }
+
+        animationInterval = setInterval(() => {
+            // 1. Efek Roda Berputar ke Atas/Belakang (Menghilang)
+            container.style.transition = "all 350s ease-in-out"; // Durasi rotasi keluar cepat
+            container.style.transform = "rotateX(90deg)";
+            container.style.opacity = "0";
+
+            setTimeout(() => {
+                // 2. Ganti nomor antrean berikutnya saat posisi tidak terlihat
+                currentIndex = (currentIndex + 1) % antreanList.length;
+                renderTickerItem(antreanList[currentIndex].nomor);
+
+                // 3. Pindahkan sudut roda bersiap masuk menggelinding dari bawah/depan (-90 derajat)
+                container.style.transition = "none";
+                container.style.transform = "rotateX(-90deg)";
+
+                // Trigger reflow browser agar perubahan instan tanpa animasi di atas terbaca
+                container.offsetHeight;
+
+                // 4. Efek Masuk: Gelindingkan roda kembali tegak lurus ke tengah (0 derajat)
+                container.style.transition = "all 450ms ease-out"; // Durasi menggelinding masuk lembut
+                container.style.transform = "rotateX(0deg)";
+                container.style.opacity = "1";
+            }, 350); // Jeda waktu tunggu saat roda berputar hilang
+
+        }, 3500); // Berganti nomor setiap 3.5 detik
+    }
+
+    function renderTickerItem(nomorAntrean) {
+        container.innerHTML = `
+            <span class="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-wider bg-emerald-50 dark:bg-emerald-950/40 px-4 py-1 rounded-xl border border-emerald-100 dark:border-emerald-900/50 min-w-[140px] text-center shadow-inner">
+                ${nomorAntrean}
+            </span>
+        `;
+    }
+
+    function fetchAntreanRealtime() {
+        fetch("/api/antrean-diproses")
+            .then(response => {
+                if (!response.ok) throw new Error('API Bermasalah');
+                return response.json();
+            })
+            .then(res => {
+                if (res.status === 'success') {
+                    const newData = res.data;
+
+                    // Bandingkan isi data secara presisi menggunakan JSON stringify
+                    if (JSON.stringify(newData) !== JSON.stringify(antreanList) || isFirstLoad) {
+                        antreanList = newData;
+
+                        // Jika data berubah atau muatan pertama, set index kembali ke awal
+                        if (isFirstLoad || currentIndex >= antreanList.length) {
+                            currentIndex = 0;
+                        }
+
+                        isFirstLoad = false;
+                        updateDisplay();
+                    }
+                }
+            })
+            .catch(err => {
+                console.error("Gagal memperbarui antrean loket:", err);
+            });
+    }
+
+    // Ambil data pertama kali saat web dibuka
+    fetchAntreanRealtime();
+
+    // Lakukan sinkronisasi background polling ke server setiap 5 detik
+    setInterval(fetchAntreanRealtime, 5000);
+});
     </script>
 </body>
 </html>
