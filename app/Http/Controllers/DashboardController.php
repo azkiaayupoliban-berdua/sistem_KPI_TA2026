@@ -1670,7 +1670,7 @@ public function kirimEmailPimpinan(Request $request)
         $kunjungan->nama_keperluan_utama = $masterKeperluan->keterangan ?? 'Kunjungan Umum';
         $kunjungan->keperluan_detail = !empty($kunjungan->keperluan) ? $kunjungan->keperluan : '-';
 
-// 4. Ambil data prodi terkait
+// 4. Ambil data prodi terkaittttt
         $prodiData = $db['master_prodi_instansi']->first(function($item) use ($kunjungan) {
             return isset($item->id) && $item->id == ($kunjungan->prodi_id ?? null);
         });
