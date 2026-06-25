@@ -1643,53 +1643,42 @@ public function kirimEmailPimpinan(Request $request)
 
     $db = $this->readMultipleSheets(['kunjungan', 'pengunjung', 'master_prodi_instansi', 'master_keperluan']);
 
-    // 1. Ambil data kunjungan berdasarkan ID
-    $kunjungan = $db['kunjungan']->first(function($item) use ($request) {
-        return isset($item->id) && $item->id == $request->kunjungan_id;
-    });
+    // ... (Kodingan pencarian data kunjungan, pengunjung, keperluan tetap sama seperti milikmu) ...
+    $kunjungan = $db['kunjungan']->firstWhere('id', $request->kunjungan_id);
+    // (pastikan semua data penunjang seperti $kunjungan->nama_prodi, dll sudah terisi ke bawah)
+    
+    // Ambil variable data penunjang untuk payload
+    $namaPengunjung = $db['pengunjung']->firstWhere('id', $kunjungan->pengunjung_id)->nama_lengkap ?? 'Umum';
+    $instansi = $db['pengunjung']->firstWhere('id', $kunjungan->pengunjung_id)->asal_instansi ?? 'Umum / Mandiri';
+    $masterKeperluan = $db['master_keperluan']->firstWhere('id', $kunjungan->keperluan_id)->keterangan ?? 'Kunjungan Umum';
+    $prodiData = $db['master_prodi_instansi']->firstWhere('id', $kunjungan->prodi_id);
+    $namaProdi = $prodiData->nama_prodi ?? $prodiData->prodi ?? '-';
 
-    if (!$kunjungan) return back()->with('error', 'Kunjungan tidak ditemukan');
-    $kunjungan = (object) $kunjungan;
-
-    // 2. Ambil data pengunjung terkait
-    $pengunjungData = $db['pengunjung']->first(function($item) use ($kunjungan) {
-        return isset($item->id) && $item->id == $kunjungan->pengunjung_id;
-    });
-
-    if ($pengunjungData) {
-        $kunjungan->pengunjung = (object) $pengunjungData;
-
-        // FIX SINKRONISASI: Ambil dari kolom 'asal_instansi' sesuai data sheet pengunjung Anda
-        $kunjungan->pengunjung->instansi = $kunjungan->pengunjung->asal_instansi ?? 'Umum / Mandiri';
-    } else {
-        $kunjungan->pengunjung = (object) ['nama_lengkap' => 'Umum', 'instansi' => 'Umum / Mandiri'];
-    }
-
-    // 3. Ambil data dari master_keperluan berdasarkan kolom 'keterangan'
-    $masterKeperluan = $db['master_keperluan']->first(function($item) use ($kunjungan) {
-        return isset($item->id) && $item->id == ($kunjungan->keperluan_id ?? null);
-    });
-
-    // Mengambil nama layanan dari kolom 'keterangan' milik master_keperluan
-    $kunjungan->nama_keperluan_utama = $masterKeperluan->keterangan ?? 'Kunjungan Umum';
-
-    // Mengambil detail tambahan dari kolom 'keperluan' milik sheet kunjungan ("1 bulan", "SP 4", dll)
-    $kunjungan->keperluan_detail = !empty($kunjungan->keperluan) ? $kunjungan->keperluan : '-';
-
-    // 4. Ambil data prodi terkait
-    $prodiData = $db['master_prodi_instansi']->first(function($item) use ($kunjungan) {
-        return isset($item->id) && $item->id == ($kunjungan->prodi_id ?? null);
-    });
-    $kunjungan->nama_prodi = $prodiData->nama_prodi ?? $prodiData->prodi ?? null;
+    $urlGas = 'URL_WEB_APP_GOOGLE_APPS_SCRIPT_KAMU';
 
     try {
-        Mail::to($request->email_pimpinan)->send(new NotifikasiPimpinanMail($kunjungan));
+        // Tembak GAS menggunakan JSON biasa via port HTTP 443 (Gak bakal diblokir Vercel)
+        $response = Http::post($urlGas . '?action=kirim_email_pimpinan', [
+            'email_pimpinan' => $request->email_pimpinan,
+            'nomor_kunjungan' => $kunjungan->nomor_kunjungan,
+            'nama_pengunjung' => $namaPengunjung,
+            'instansi' => $instansi,
+            'keperluan' => $masterKeperluan,
+            'detail' => $kunjungan->keperluan ?? '-',
+            'prodi' => $namaProdi
+        ]);
 
-        $this->updateSheet('kunjungan', $kunjungan->id, ['is_email_sent' => 1]);
-        return back()->with('success', 'Email berhasil diteruskan.');
+        $hasil = $response->json();
+
+        if (isset($hasil['status']) && $hasil['status'] === 'success') {
+            $this->updateSheet('kunjungan', $kunjungan->id, ['is_email_sent' => 1]);
+            return back()->with('success', 'Email berhasil diteruskan ke pimpinan lewat Google Server!');
+        } else {
+            return back()->with('error', 'Gagal dikirim via GAS: ' . ($hasil['message'] ?? 'Error tidak diketahui'));
+        }
 
     } catch (\Exception $e) {
-        return back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
+        return back()->with('error', 'Gagal menghubungi server Google untuk email: ' . $e->getMessage());
     }
 }
 
