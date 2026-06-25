@@ -618,7 +618,7 @@ function startRotation() {
     // Ambil data pertama kali saat web dibuka
     fetchAntreanRealtime();
 
-    // Lakukan sinkronisasi background polling ke server setiap 5 detik
+    // Laaaakukan sinkronisasi background polling ke server setiap 5 detik
     setInterval(fetchAntreanRealtime, 5000);
 });
     </script>
