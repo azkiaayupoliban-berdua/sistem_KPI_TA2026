@@ -11,20 +11,6 @@ use App\Http\Controllers\KunjunganController;
 
 use App\Http\Middleware\CekSessionLogin;
 
-Route::get('/api/antrean-diproses', [KunjunganController::class, 'getAntreanDiproses'])->name('api.antrean.diproses');
-/*
-notif data masuk dari pengunjung ke admin
-*/
-Route::get('/dashboard/check-notifications', [App\Http\Controllers\DashboardController::class, 'checkNotifications'])
-    ->name('dashboard.check-notif');
-/*
-|--------------------------------------------------------------------------
-| 1. BAGIAN PENGUNJUNG (Public)
-|--------------------------------------------------------------------------
-*/
-// Diseragamkan menggunakan array class syntax
-
-Route::get('/cek-pengunjung/{identitas}', 'App\Http\Controllers\KunjunganController@cekPengunjung')->name('pengunjung.cek');
 
 
 Route::get('/', 'App\Http\Controllers\KunjunganController@create')->name('landing');
@@ -34,6 +20,19 @@ Route::post('/kunjungan', 'App\Http\Controllers\KunjunganController@store')->nam
 Route::get('/status/{id}', 'App\Http\Controllers\KunjunganController@cekStatus')->name('kunjungan.status');
 Route::get('/survei/{id}', 'App\Http\Controllers\KunjunganController@formSurvey')->name('survey.form');
 Route::post('/survei/simpan', 'App\Http\Controllers\KunjunganController@storeSurvey')->name('survey.store');
+Route::get('/api/antrean-diproses', [KunjunganController::class, 'getAntreanDiproses'])->name('api.antrean.diproses');
+/*
+notif data masuk dari pengunjung ke admin
+*/
+
+/*
+|--------------------------------------------------------------------------
+| 1. BAGIAN PENGUNJUNG (Public)
+|--------------------------------------------------------------------------
+*/
+// Diseragamkan menggunakan array class syntax
+
+Route::get('/cek-pengunjung/{identitas}', 'App\Http\Controllers\KunjunganController@cekPengunjung')->name('pengunjung.cek');
 
 /*
 |--------------------------------------------------------------------------
@@ -55,7 +54,8 @@ Route::middleware([CekSessionLogin::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::post('/dashboard/antrean/kirim-massal', 'App\Http\Controllers\KunjunganController@kirimMassal')->name('kunjungan.kirim-massal');
-
+Route::get('/dashboard/check-notifications', [App\Http\Controllers\DashboardController::class, 'checkNotifications'])
+    ->name('dashboard.check-notif');
     // Halaman Khusus Pimpinan
     Route::get('/dashboard/pimpinan/konfirmasi', [PimpinanKonfirmasiController::class, 'index'])->name('pimpinan.konfirmasi');
     Route::post('/dashboard/pimpinan/konfirmasi/{id}/tanggapan', [PimpinanKonfirmasiController::class, 'tanggapan'])->name('pimpinan.tanggapan');
