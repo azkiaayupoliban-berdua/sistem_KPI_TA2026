@@ -1530,40 +1530,28 @@ public function uploadFile(Request $request, $id)
         'file_surat' => 'required|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:4096'
     ]);
 
-    if ($request->hasFile('file_surat')) {
-        $file = $request->file('file_surat');
-        $ekstensi = $file->getClientOriginalExtension();
-        $namaFile = 'surat_' . str_replace('-', '_', $kunjungan->nomor_kunjungan) . '_' . time() . '.' . $ekstensi;
+if ($request->hasFile('file_surat')) {
+    $file = $request->file('file_surat');
+    $ekstensi = $file->getClientOriginalExtension();
+    $namaFile = 'surat_' . str_replace('-', '_', $kunjungan->nomor_kunjungan) . '_' . time() . '.' . $ekstensi;
 
-        // Ubah file mentah menjadi teks string Base64 aman
-        $fileBase64 = base64_encode(file_get_contents($file->getRealPath()));
+    $fileBase64 = base64_encode(file_get_contents($file->getRealPath()));
+    $urlGas = 'MASUKKAN_URL_WEB_APP_GAS_KAMU';
 
-        // Tembak URL Web App Google Apps Script kamu yang baru saja dideploy
-        $urlGas = 'MASUKKAN_URL_WEB_APP_GAS_YANG_BARU_DI_SINI';
+    // 1. Tembak GAS
+    $response = Http::post($urlGas . '?action=upload_file', [
+        'id' => $id,
+        'nama_file' => $namaFile,
+        'tipe_mime' => $file->getMimeType(),
+        'file_base64' => $fileBase64
+    ]);
 
-        try {
-            // Kita kirim request POST dengan action=upload_file sesuai route GAS kita di atas
-            $response = Http::post($urlGas . '?action=upload_file', [
-                'id' => $id,
-                'nama_file' => $namaFile,
-                'tipe_mime' => $file->getMimeType(),
-                'file_base64' => $fileBase64
-            ]);
-
-            $hasil = $response->json();
-
-            if (isset($hasil['status']) && $hasil['status'] === 'success') {
-                return back()->with(
-                    'success_upload_remind',
-                    'Berkas pendukung berhasil diundgah secara permanen ke Google Drive prodi!'
-                );
-            } else {
-                return back()->with('error', 'Gagal upload: ' . ($hasil['message'] ?? 'Respons tidak diketahui'));
-            }
-
-        } catch (\Exception $e) {
-            return back()->with('error', 'Koneksi ke Google Script putus: ' . $e->getMessage());
-        }
+    // 2. TAMBAHKAN DUMP DEBUG DI SINI UNTUK MELIHAT RESPON ASLI DARI GAS!
+    dd([
+        'Status_Response_Http' => $response->status(),
+        'Isi_Respon_Dari_GAS' => $response->json(),
+        'Raw_Body_GAS' => $response->body()
+    ]);
     }
 
     return back();
